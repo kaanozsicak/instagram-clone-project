@@ -17,6 +17,12 @@ const firebaseConfig = {
     appId: import.meta.env.VITE_FIREBASE_APP_ID,
 };
 
+console.log('Firebase Config:', {
+    apiKey: firebaseConfig.apiKey ? 'API Key mevcut' : 'API Key eksik',
+    authDomain: firebaseConfig.authDomain,
+    projectId: firebaseConfig.projectId,
+});
+
 // Firebase uygulamasını başlat
 const app = initializeApp(firebaseConfig);
 
