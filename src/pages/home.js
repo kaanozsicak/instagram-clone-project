@@ -1,6 +1,8 @@
 import { AuthService } from '../services/auth-service.js';
 import { SearchService } from '../services/search-service.js';
 import { PostService } from '../services/post-service.js';
+import { NotificationService } from '../services/notification-service.js'; // Yeni import
+import NotificationMenu from '../components/notification-menu.js'; // Yeni import
 
 class HomePage {
     static async render() {
@@ -169,12 +171,25 @@ class HomePage {
                 .post-caption {
                     padding: 10px;
                 }
+                .post-date {
+                    font-size: 12px;
+                    color: #8e8e8e;
+                    margin-left: 10px;
+                }
             </style>
             <div class="home-container">
                 <div class="header">
                     <div class="logo">Instagram Clone</div>
                     <div class="nav-links">
-                        <a href="/profile" class="nav-link">Profilim</a>
+                        <div class="notifications-dropdown">
+                            <button id="notifications-btn" class="notifications-btn">
+                                🔔 <span id="notification-count"></span>
+                            </button>
+                            <div id="notifications-menu" class="notifications-menu" style="display: none;">
+                                <div id="notifications-list"></div>
+                            </div>
+                        </div>
+                        <a href="#" id="profile-link" class="nav-link">Profilim</a>
                         <button id="logout-btn" class="logout-btn">Çıkış Yap</button>
                     </div>
                 </div>
@@ -194,15 +209,18 @@ class HomePage {
         `;
 
         try {
+            console.log('Gönderiler yükleniyor...');
             const posts = await PostService.getFollowedUsersPosts();
+            console.log('Yüklenen gönderi sayısı:', posts.length);
 
             const feedContainer = document.getElementById('feed-container');
 
-            if (posts.length === 0) {
+            if (!posts || posts.length === 0) {
                 feedContainer.innerHTML = `
                     <p class="no-posts">
-                        Henüz hiç gönderi yok. 
-                        Kullanıcıları takip etmeye başlayın!
+                        Henüz hiç gönderi yok veya hiç kimseyi takip etmiyorsunuz. 
+                        <br>
+                        Kullanıcıları takip etmeye başlayın veya kendi gönderilerinizi paylaşın!
                     </p>
                 `;
                 return;
@@ -218,7 +236,10 @@ class HomePage {
                             alt="Profil" 
                             class="post-avatar"
                         >
-                        <span class="post-username">${post.username}</span>
+                        <div>
+                            <span class="post-username">${post.username}</span>
+                            <span class="post-date">${post.formattedDate}</span>
+                        </div>
                     </div>
                     <img 
                         src="${post.imageUrl}" 
@@ -241,7 +262,54 @@ class HomePage {
                 )
                 .join('');
 
-            this.setupPostEventListeners();
+            const postCards = document.querySelectorAll('.post-card');
+            postCards.forEach((postCard) => {
+                const postId = postCard.dataset.postId;
+
+                // Beğeni butonu event listener'ı
+                const likeBtn = postCard.querySelector('.like-btn');
+                if (likeBtn) {
+                    likeBtn.addEventListener('click', async () => {
+                        try {
+                            const updatedLikes = await PostService.likePost(
+                                postId
+                            );
+                            likeBtn.innerHTML = `❤️ ${updatedLikes}`;
+                        } catch (error) {
+                            console.error('Beğeni hatası:', error);
+                        }
+                    });
+                }
+
+                // Yorum butonu event listener'ı
+                const commentBtn = postCard.querySelector('.comment-btn');
+                if (commentBtn) {
+                    commentBtn.addEventListener('click', async () => {
+                        // Post modalını açabilirsiniz veya yorum yapma alanını gösterebilirsiniz
+                        const comment = prompt('Yorumunuzu yazın:');
+                        if (comment) {
+                            try {
+                                await PostService.addComment(postId, comment);
+                                alert('Yorumunuz eklendi!');
+                            } catch (error) {
+                                console.error('Yorum ekleme hatası:', error);
+                                alert('Yorum eklenirken bir hata oluştu');
+                            }
+                        }
+                    });
+                }
+
+                // Post'a tıklama event listener'ı
+                postCard.addEventListener('click', (e) => {
+                    // Beğeni ve yorum butonlarına tıklandığında modal açılmasın
+                    if (
+                        !e.target.closest('.like-btn') &&
+                        !e.target.closest('.comment-btn')
+                    ) {
+                        this.openPostModal(postId);
+                    }
+                });
+            });
         } catch (error) {
             console.error('Gönderiler yüklenirken hata:', error);
             const feedContainer = document.getElementById('feed-container');
@@ -256,8 +324,140 @@ class HomePage {
         this.setupEventListeners();
     }
 
-    static setupEventListeners() {
+    static async openPostModal(postId) {
+        try {
+            const post = await PostService.getPostById(postId);
+            const comments = await PostService.getPostComments(postId);
+
+            // Modal HTML'ini oluştur ve göster
+            // ... (ProfilePage'deki openPostModal metodunu buraya kopyalayabilirsiniz)
+        } catch (error) {
+            console.error('Post detayları alınırken hata:', error);
+        }
+    }
+
+    static async setupEventListeners() {
         console.log('Event listeners kuruluyor...');
+
+        // Bildirim sistemi elementleri
+        const notificationsBtn = document.getElementById('notifications-btn');
+        const notificationsMenu = document.getElementById('notifications-menu');
+        const notificationsList = document.getElementById('notifications-list');
+        const notificationsContainer = document.querySelector(
+            '.notifications-dropdown'
+        );
+        const currentUser = AuthService.getCurrentUser();
+
+        // Bildirim sistemi
+        if (
+            notificationsBtn &&
+            notificationsMenu &&
+            notificationsList &&
+            currentUser
+        ) {
+            const loadNotifications = async () => {
+                try {
+                    const notifications =
+                        await NotificationService.getNotifications(
+                            currentUser.uid
+                        );
+                    console.log('Gelen bildirimler:', notifications);
+
+                    const pendingRequests = notifications.filter(
+                        (n) =>
+                            n.type === 'follow_request' &&
+                            n.status === 'pending'
+                    );
+
+                    // Bildirim sayacını güncelle
+                    notificationsBtn.innerHTML =
+                        pendingRequests.length > 0
+                            ? `🔔 <span class="notification-count">${pendingRequests.length}</span>`
+                            : '🔔';
+
+                    // Bildirim listesini güncelle
+                    notificationsList.innerHTML = notifications
+                        .map((notification) => {
+                            if (
+                                notification.type === 'follow_request' &&
+                                notification.status === 'pending'
+                            ) {
+                                return `
+                                    <div class="notification-item">
+                                        <p><strong>${notification.senderUsername}</strong> sizi takip etmek istiyor</p>
+                                        <div class="notification-actions">
+                                            <button onclick="acceptFollowRequest('${notification.id}', '${notification.senderUserId}')">
+                                                Kabul Et
+                                            </button>
+                                            <button onclick="rejectFollowRequest('${notification.id}', '${notification.senderUserId}')">
+                                                Reddet
+                                            </button>
+                                        </div>
+                                    </div>
+                                `;
+                            }
+                            return '';
+                        })
+                        .join('');
+                } catch (error) {
+                    console.error('Bildirimler yüklenirken hata:', error);
+                }
+            };
+
+            // İlk yükleme ve periyodik kontrol
+            await loadNotifications();
+            setInterval(loadNotifications, 30000);
+
+            // Bildirim menüsü olayları
+            notificationsBtn.addEventListener('click', () => {
+                notificationsMenu.style.display =
+                    notificationsMenu.style.display === 'none'
+                        ? 'block'
+                        : 'none';
+            });
+
+            // Dışarı tıklandığında menüyü kapat
+            document.addEventListener('click', (e) => {
+                if (
+                    !notificationsBtn.contains(e.target) &&
+                    !notificationsMenu.contains(e.target)
+                ) {
+                    notificationsMenu.style.display = 'none';
+                }
+            });
+
+            // Global bildirim işleme fonksiyonları
+            window.acceptFollowRequest = async (notificationId, senderId) => {
+                try {
+                    await NotificationService.handleFollowRequest(
+                        notificationId,
+                        true,
+                        currentUser.uid,
+                        senderId
+                    );
+                    await loadNotifications();
+                    location.reload();
+                } catch (error) {
+                    console.error('Takip isteği kabul hatası:', error);
+                    alert('İstek kabul edilirken bir hata oluştu');
+                }
+            };
+
+            window.rejectFollowRequest = async (notificationId, senderId) => {
+                try {
+                    await NotificationService.handleFollowRequest(
+                        notificationId,
+                        false,
+                        currentUser.uid,
+                        senderId
+                    );
+                    await loadNotifications();
+                } catch (error) {
+                    console.error('Takip isteği red hatası:', error);
+                    alert('İstek reddedilirken bir hata oluştu');
+                }
+            };
+        }
 
         // Çıkış butonu event listener'ı
         const logoutBtn = document.getElementById('logout-btn');
@@ -273,6 +473,27 @@ class HomePage {
                 } catch (error) {
                     console.error('Çıkış hatası:', error);
                     alert('Çıkış yapılırken bir hata oluştu');
+                }
+            });
+        }
+
+        // Profilim linki için event listener ekle
+        const profileLink = document.getElementById('profile-link');
+        if (profileLink) {
+            profileLink.addEventListener('click', async (e) => {
+                e.preventDefault();
+                try {
+                    const currentUser = await AuthService.getUserProfile(
+                        AuthService.getCurrentUser().uid
+                    );
+                    if (currentUser && currentUser.username) {
+                        window.location.href = `/profile/${currentUser.username}`;
+                    } else {
+                        console.error('Kullanıcı bilgileri alınamadı');
+                        alert('Profil bilgilerinize erişilemiyor');
+                    }
+                } catch (error) {
+                    console.error('Profil yönlendirme hatası:', error);
                 }
             });
         }

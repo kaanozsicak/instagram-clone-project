@@ -1,6 +1,7 @@
 import { AuthService } from '../services/auth-service.js';
 import { FollowService } from '../services/follow-service.js';
 import { PostService } from '../services/post-service.js';
+import { ProfileService } from '../services/profile-service.js'; // Yeni import
 import { firestore } from '../services/firebase-config.js';
 import {
     collection,
@@ -12,68 +13,103 @@ import {
 
 class ProfilePage {
     static async render(username = null) {
-        const currentUser = await AuthService.ensureCurrentUser();
-
-        if (!currentUser) {
-            window.location.href = '/login';
-            return;
-        }
-
-        let profileUser;
-        let isOwnProfile = false;
-        let isFollowing = false;
-        let followersCount = 0;
-        let userPosts = [];
+        const appContainer = document.getElementById('app');
 
         try {
-            if (!username) {
-                profileUser = await AuthService.getUserProfile(currentUser.uid);
-                username = profileUser.username;
-                isOwnProfile = true;
-            } else {
-                profileUser = await this.getUserByUsername(username);
-                isOwnProfile = profileUser.uid === currentUser.uid;
+            // Temel değişkenleri tanımla
+            const pageData = {
+                profileUser: null,
+                isOwnProfile: false,
+                followStatus: {
+                    isFollowing: false,
+                    isPending: false,
+                },
+                followersCount: 0,
+                userPosts: [],
+                followBtnText: 'Takip Et',
+                followBtnColor: '#0095f6',
+                isPrivate: false,
+                canViewPosts: false,
+            };
 
-                if (!isOwnProfile) {
-                    isFollowing = await FollowService.checkFollowStatus(
+            const currentUser = await AuthService.ensureCurrentUser();
+            if (!currentUser) {
+                window.location.href = '/login';
+                return;
+            }
+
+            // URL'den kullanıcı adını al ve profil bilgilerini yükle
+            const pathParts = window.location.pathname.split('/');
+            const urlUsername = pathParts[pathParts.length - 1];
+
+            if (urlUsername === 'profile' || !urlUsername) {
+                pageData.profileUser = await AuthService.getUserProfile(
+                    currentUser.uid
+                );
+                pageData.isOwnProfile = true;
+                username = pageData.profileUser.username;
+            } else {
+                pageData.profileUser = await this.getUserByUsername(
+                    urlUsername
+                );
+                pageData.isOwnProfile =
+                    pageData.profileUser.uid === currentUser.uid;
+                username = pageData.profileUser.username;
+
+                if (!pageData.isOwnProfile) {
+                    // Takip durumunu kontrol et
+                    const status = await FollowService.checkFollowRequestStatus(
                         username
                     );
-                    followersCount = await FollowService.getFollowersCount(
-                        username
-                    );
+                    pageData.followStatus = status;
+                    pageData.followersCount =
+                        await FollowService.getFollowersCount(username);
+
+                    // Takip butonu durumunu güncelle
+                    if (status.isFollowing) {
+                        pageData.followBtnText = 'Takipten Çık';
+                        pageData.followBtnColor = '#ff3040';
+                    } else if (status.isPending) {
+                        pageData.followBtnText = 'İstek Gönderildi';
+                        pageData.followBtnColor = '#8e8e8e';
+                    }
                 }
             }
 
-            console.log('Gönderiler yükleniyor...');
-            userPosts = await PostService.getUserPosts(username);
-            console.log('Yüklenen gönderiler:', userPosts);
+            // Gizlilik ayarlarını kontrol et
+            pageData.isPrivate = await ProfileService.getPrivacySettings(
+                pageData.profileUser.uid
+            );
+            pageData.canViewPosts =
+                !pageData.isPrivate ||
+                pageData.isOwnProfile ||
+                pageData.followStatus.isFollowing;
 
-            profileUser = {
-                fullName: '',
-                username: '',
-                bio: '',
-                profileImage: '/default-avatar.png',
-                ...profileUser,
-            };
-
-            if (!profileUser) {
-                throw new Error('Kullanıcı bulunamadı');
+            // Gönderileri yükle
+            if (pageData.canViewPosts) {
+                pageData.userPosts = await PostService.getUserPosts(username);
             }
-        } catch (error) {
-            console.error('Profil yükleme hatası:', error);
-            alert('Profil yüklenirken bir hata oluştu');
-            window.location.href = '/home';
-            return;
-        }
 
-        const appContainer = document.getElementById('app');
+            // Posts grid HTML'i oluştur
+            const postsGridHTML = pageData.canViewPosts
+                ? pageData.userPosts.length > 0
+                    ? pageData.userPosts
+                          .map(
+                              (post) => `
+                        <div class="post-item" data-post-id="${post.id}">
+                            <img src="${post.imageUrl}" alt="Gönderi">
+                        </div>
+                    `
+                          )
+                          .join('')
+                    : '<p class="no-posts">Henüz hiç gönderi yok</p>'
+                : `<div class="private-account-message">
+                    <p>🔒 Bu hesap gizli</p>
+                    <p>Gönderileri görmek için takip etmeniz gerekiyor</p>
+                   </div>`;
 
-        if (!appContainer) {
-            console.error('App container bulunamadı');
-            return;
-        }
-
-        appContainer.innerHTML = `
+            // HTML template'ini render et
+            appContainer.innerHTML = `
         <style>
             .profile-container {
                 max-width: 800px;
@@ -196,7 +232,7 @@ class ProfilePage {
                 margin-right: 10px;
             }
             .follow-btn {
-                background-color: ${isFollowing ? '#ff3040' : '#0095f6'};
+                background-color: ${pageData.followBtnColor};
             }
             .followers-count {
                 margin-top: 10px;
@@ -413,88 +449,123 @@ class ProfilePage {
         <div class="profile-container">
             <div class="profile-header">
                 <img 
-                    src="${profileUser.profileImage}" 
-                    alt="${profileUser.username}" 
+                    src="${pageData.profileUser.profileImage}" 
+                    alt="${pageData.profileUser.username}" 
                     class="profile-image"
                 >
                 <div class="profile-info">
                     <div class="profile-username">@${
-                        profileUser.username || 'Kullanıcı adı yok'
+                        pageData.profileUser.username || 'Kullanıcı adı yok'
                     }</div>
                     <div class="profile-fullname">${
-                        profileUser.fullName || 'Ad Soyad belirtilmemiş'
+                        pageData.profileUser.fullName ||
+                        'Ad Soyad belirtilmemiş'
                     }</div>
                     <div class="profile-bio">${
-                        profileUser.bio || 'Henüz bir biyografi eklenmedi'
+                        pageData.profileUser.bio ||
+                        'Henüz bir biyografi eklenmedi'
                     }</div>
                     
                     <div class="profile-actions">
                         ${
-                            isOwnProfile
+                            pageData.isOwnProfile
                                 ? `
                             <button class="edit-profile-btn" id="edit-profile-btn">
                                 Profili Düzenle
                             </button>
                         `
                                 : `
-                            <button class="follow-btn" id="follow-btn">
-                                ${isFollowing ? 'Takipten Çık' : 'Takip Et'}
+                            <button class="follow-btn" id="follow-btn" style="background-color: ${pageData.followBtnColor}">
+                                ${pageData.followBtnText}
                             </button>
                         `
                         }
                     </div>
                     
                     ${
-                        !isOwnProfile
+                        !pageData.isOwnProfile
                             ? `
                         <div class="followers-count">
-                            ${followersCount} takipçi
+                            ${pageData.followersCount} takipçi
                         </div>
                     `
                             : ''
                     }
                 </div>
+                ${
+                    pageData.isOwnProfile
+                        ? `<button id="settings-btn" class="settings-btn">
+                        ⚙️ Ayarlar
+                    </button>`
+                        : ''
+                }
+                <span class="privacy-badge">${
+                    pageData.isPrivate ? '🔒' : '🌐'
+                }</span>
+            </div>
+
+            <!-- Ayarlar Modal -->
+            <div id="settings-modal" class="modal" style="display: none;">
+                <div class="modal-content">
+                    <h2>Hesap Ayarları</h2>
+                    <div class="privacy-setting">
+                        <label>
+                            <input type="checkbox" id="private-account" ${
+                                pageData.isPrivate ? 'checked' : ''
+                            }>
+                            Gizli Hesap
+                        </label>
+                        <p class="setting-info">
+                            Gizli hesap olduğunda, sadece onayladığınız takipçiler gönderilerinizi görebilir.
+                        </p>
+                    </div>
+                    <button id="save-settings">Kaydet</button>
+                    <button id="close-settings">Kapat</button>
+                </div>
             </div>
             
             <div class="profile-posts">
                 ${
-                    isOwnProfile
+                    pageData.isOwnProfile
                         ? `
                     <button class="add-post-btn" id="add-post-btn">
                         Gönderi Ekle
                     </button>
-                    <input 
-                        type="file" 
-                        id="post-file-input" 
-                        accept="image/*"
-                    >
+                    <input type="file" id="post-file-input" accept="image/*">
                 `
                         : ''
                 }
                 
                 <div class="posts-grid" id="posts-grid">
-                    ${
-                        userPosts.length > 0
-                            ? userPosts
-                                  .map(
-                                      (post) => `
-                            <div class="post-item" data-post-id="${post.id}">
-                                <img src="${post.imageUrl}" alt="Gönderi">
-                            </div>
-                        `
-                                  )
-                                  .join('')
-                            : '<p class="no-posts">Henüz hiç gönderi yok</p>'
-                    }
+                    ${postsGridHTML}
                 </div>
             </div>
         </div>
     `;
 
-        this.setupEventListeners(isOwnProfile, profileUser, username);
+            // Event listener'ları ayarla
+            this.setupEventListeners(pageData);
+        } catch (error) {
+            console.error('Profil yükleme hatası:', error);
+            if (appContainer) {
+                appContainer.innerHTML = `
+                <div style="text-align: center; padding: 20px;">
+                    <h2>Profil Yüklenemedi</h2>
+                    <p>${error.message}</p>
+                    <button onclick="window.location.href='/home'" 
+                            style="padding: 10px; margin-top: 10px; 
+                            background-color: #0095f6; color: white; 
+                            border: none; border-radius: 4px; 
+                            cursor: pointer;">
+                        Ana Sayfaya Dön
+                    </button>
+                </div>
+            `;
+            }
+        }
     }
 
-    static setupEventListeners(isOwnProfile, profileUser, username) {
+    static setupEventListeners(pageData) {
         const backBtn = document.getElementById('back-btn');
         backBtn.addEventListener('click', () => {
             window.location.href = '/home';
@@ -584,7 +655,7 @@ class ProfilePage {
             }
         });
 
-        if (isOwnProfile) {
+        if (pageData.isOwnProfile) {
             const addPostBtn = document.getElementById('add-post-btn');
             const postFileInput = document.getElementById('post-file-input');
             const postsGrid = document.getElementById('posts-grid');
@@ -636,38 +707,85 @@ class ProfilePage {
                     }
                 }
             });
-        }
 
-        if (!isOwnProfile) {
-            const followBtn = document.getElementById('follow-btn');
-            followBtn.addEventListener('click', async () => {
+            const settingsBtn = document.getElementById('settings-btn');
+            const settingsModal = document.getElementById('settings-modal');
+            const closeSettings = document.getElementById('close-settings');
+            const saveSettings = document.getElementById('save-settings');
+            const privateAccount = document.getElementById('private-account');
+
+            settingsBtn.addEventListener('click', () => {
+                settingsModal.style.display = 'block';
+            });
+
+            closeSettings.addEventListener('click', () => {
+                settingsModal.style.display = 'none';
+            });
+
+            saveSettings.addEventListener('click', async () => {
                 try {
-                    const isCurrentlyFollowing =
-                        followBtn.textContent === 'Takipten Çık';
-
-                    if (isCurrentlyFollowing) {
-                        await FollowService.unfollowUser(username);
-                        followBtn.textContent = 'Takip Et';
-                        followBtn.style.backgroundColor = '#0095f6';
-                    } else {
-                        await FollowService.followUser(username);
-                        followBtn.textContent = 'Takipten Çık';
-                        followBtn.style.backgroundColor = '#ff3040';
-                    }
-
-                    const followersCountEl =
-                        document.querySelector('.followers-count');
-                    if (followersCountEl) {
-                        const newCount = await FollowService.getFollowersCount(
-                            username
-                        );
-                        followersCountEl.textContent = `${newCount} takipçi`;
-                    }
+                    await ProfileService.updatePrivacySettings(
+                        pageData.profileUser.uid,
+                        privateAccount.checked
+                    );
+                    location.reload();
                 } catch (error) {
-                    console.error('Takip işlemi hatası:', error);
-                    alert('Takip işlemi sırasında bir hata oluştu');
+                    console.error('Ayarlar kaydedilirken hata:', error);
+                    alert('Ayarlar kaydedilirken bir hata oluştu');
                 }
             });
+        }
+
+        if (!pageData.isOwnProfile) {
+            const followBtn = document.getElementById('follow-btn');
+            if (followBtn) {
+                followBtn.addEventListener('click', async () => {
+                    try {
+                        const followStatus =
+                            await FollowService.checkFollowRequestStatus(
+                                pageData.profileUser.username
+                            );
+
+                        if (followStatus.isPending) {
+                            alert('Zaten takip isteği gönderilmiş');
+                            return;
+                        }
+
+                        if (followStatus.isFollowing) {
+                            await FollowService.unfollowUser(
+                                pageData.profileUser.username
+                            );
+                            followBtn.textContent = 'Takip Et';
+                            followBtn.style.backgroundColor = '#0095f6';
+                        } else {
+                            const result = await FollowService.followUser(
+                                pageData.profileUser.username
+                            );
+                            if (result === 'pending') {
+                                followBtn.textContent = 'İstek Gönderildi';
+                                followBtn.style.backgroundColor = '#8e8e8e';
+                            } else {
+                                followBtn.textContent = 'Takipten Çık';
+                                followBtn.style.backgroundColor = '#ff3040';
+                            }
+                        }
+
+                        // Takipçi sayısını güncelle
+                        const followersCountEl =
+                            document.querySelector('.followers-count');
+                        if (followersCountEl) {
+                            const newCount =
+                                await FollowService.getFollowersCount(
+                                    pageData.profileUser.username
+                                );
+                            followersCountEl.textContent = `${newCount} takipçi`;
+                        }
+                    } catch (error) {
+                        console.error('Takip işlemi hatası:', error);
+                        alert('Takip işlemi sırasında bir hata oluştu');
+                    }
+                });
+            }
         }
 
         const postsGrid = document.getElementById('posts-grid');
@@ -803,13 +921,19 @@ class ProfilePage {
 
     static async getUserByUsername(username) {
         try {
+            console.log('Kullanıcı aranıyor:', username);
             const usersRef = collection(firestore, 'users');
             const q = firestoreQuery(
                 usersRef,
-                where('username', '==', username.toLowerCase())
+                where('username', '==', username)
             );
 
             const querySnapshot = await getDocs(q);
+            console.log('Sorgu sonucu:', {
+                empty: querySnapshot.empty,
+                size: querySnapshot.size,
+                username: username,
+            });
 
             if (querySnapshot.empty) {
                 throw new Error('Kullanıcı bulunamadı');
@@ -818,14 +942,17 @@ class ProfilePage {
             const userDoc = querySnapshot.docs[0];
             const userData = userDoc.data();
 
-            return {
+            const profileData = {
                 uid: userDoc.id,
+                ...userData,
                 fullName: userData.fullName || '',
                 username: userData.username || '',
                 bio: userData.bio || '',
                 profileImage: userData.profileImage || '/default-avatar.png',
-                ...userData,
             };
+
+            console.log('Bulunan kullanıcı profili:', profileData);
+            return profileData;
         } catch (error) {
             console.error('Kullanıcı arama hatası:', error);
             throw error;

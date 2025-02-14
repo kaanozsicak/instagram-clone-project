@@ -11,9 +11,11 @@ import {
     serverTimestamp,
     updateDoc,
     arrayUnion,
+    limit, // limit fonksiyonunu ekleyelim
 } from 'firebase/firestore';
 import { ref, uploadBytes, getDownloadURL } from 'firebase/storage';
 import { AuthService } from './auth-service.js';
+import { FollowService } from './follow-service.js'; // FollowService'i import et
 
 export class PostService {
     static async getUserPosts(username) {
@@ -125,48 +127,88 @@ export class PostService {
                 throw new Error('Kullanıcı oturumu açık değil');
             }
 
-            const followingRef = doc(firestore, 'followers', currentUser.uid);
-            const followingSnap = await getDoc(followingRef);
+            console.log('Current user:', currentUser.uid);
 
-            if (!followingSnap.exists()) {
+            // Takip edilen kullanıcıların listesini al
+            const followingList = await FollowService.getFollowing(
+                currentUser.uid
+            );
+            console.log('Takip edilen kullanıcılar:', followingList);
+
+            // Kendi ID'mizi de ekleyelim
+            const userIds = [currentUser.uid, ...followingList];
+            console.log('Gönderi aranacak kullanıcılar:', userIds);
+
+            if (userIds.length === 0) {
+                console.log('Hiç kullanıcı bulunamadı');
                 return [];
             }
 
-            const followedUsers = followingSnap.data().following || [];
-
             const postsRef = collection(firestore, 'posts');
-            const q = query(
-                postsRef,
-                where('userId', 'in', [...followedUsers, currentUser.uid]),
-                orderBy('timestamp', 'desc'),
-                limit(50)
-            );
+            const allPosts = [];
 
-            const querySnapshot = await getDocs(q);
+            // Her kullanıcı için ayrı sorgu yap
+            for (const userId of userIds) {
+                console.log(
+                    `${userId} kullanıcısının gönderileri getiriliyor...`
+                );
 
-            const posts = [];
-            for (const postDoc of querySnapshot.docs) {
-                const postData = postDoc.data();
+                const q = query(
+                    postsRef,
+                    where('userId', '==', userId),
+                    orderBy('createdAt', 'desc')
+                );
 
-                const userRef = doc(firestore, 'users', postData.userId);
-                const userSnap = await getDoc(userRef);
-                const userData = userSnap.data();
-
-                posts.push({
-                    id: postDoc.id,
-                    ...postData,
-                    username: userData.username,
-                    profileImage: userData.profileImage,
+                const querySnapshot = await getDocs(q);
+                querySnapshot.forEach((doc) => {
+                    const postData = doc.data();
+                    allPosts.push({
+                        id: doc.id,
+                        ...postData,
+                        createdAt: postData.createdAt?.toDate(),
+                        formattedDate: postData.createdAt
+                            ? this.formatDate(postData.createdAt.toDate())
+                            : '',
+                    });
                 });
             }
 
-            return posts;
+            // Tüm gönderileri tarihe göre sırala
+            allPosts.sort((a, b) => b.createdAt - a.createdAt);
+
+            console.log('Toplam bulunan gönderi sayısı:', allPosts.length);
+            return allPosts;
         } catch (error) {
-            console.error(
-                'Takip edilen kullanıcıların gönderileri alınırken hata:',
-                error
-            );
+            console.error('Gönderiler alınırken hata:', error);
+            console.error('Hata detayı:', error.stack);
             return [];
+        }
+    }
+
+    // Tarih formatlama yardımcı fonksiyonu
+    static formatDate(date) {
+        try {
+            const now = new Date();
+            const diff = now - date;
+            const seconds = Math.floor(diff / 1000);
+            const minutes = Math.floor(seconds / 60);
+            const hours = Math.floor(minutes / 60);
+            const days = Math.floor(hours / 24);
+
+            if (days > 7) {
+                return date.toLocaleDateString();
+            } else if (days > 0) {
+                return `${days} gün önce`;
+            } else if (hours > 0) {
+                return `${hours} saat önce`;
+            } else if (minutes > 0) {
+                return `${minutes} dakika önce`;
+            } else {
+                return 'Az önce';
+            }
+        } catch (error) {
+            console.error('Tarih formatlama hatası:', error);
+            return '';
         }
     }
 

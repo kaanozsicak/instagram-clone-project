@@ -14,7 +14,7 @@ class App {
             '/signup': SignupPage,
             '/complete-profile': CompleteProfilePage,
             '/profile': ProfilePage,
-            '/profile/:username': ProfilePage
+            '/profile/:username': ProfilePage,
         };
 
         this.init();
@@ -26,14 +26,14 @@ class App {
 
         // Sayfa yönlendirmelerini ayarla
         window.addEventListener('popstate', this.handleRouting.bind(this));
-        
+
         // İlk sayfa yüklemesi
         this.handleRouting();
     }
 
     handleAuthStateChange(user) {
         console.log('Auth state değişikliği:', user);
-        
+
         if (user) {
             // Kullanıcı bilgilerini yenile
             this.checkUserProfile(user);
@@ -48,7 +48,7 @@ class App {
     async checkUserProfile(user) {
         try {
             const userProfile = await AuthService.getUserProfile(user.uid);
-            
+
             console.log('Kullanıcı profil durumu:', userProfile);
 
             // Profil tamamlanmamışsa complete-profile sayfasına yönlendir
@@ -76,25 +76,42 @@ class App {
         this.renderPage(path);
     }
 
-    async renderPage(path, param = null) {
-        const PageComponent = this.routes[path];
-
-        if (!PageComponent) {
-            console.error('Sayfa bulunamadı:', path);
-            this.navigateTo('/home');
-            return;
-        }
+    async renderPage() {
+        const path = window.location.pathname;
 
         try {
-            // Parametreli sayfa render etme
-            if (param) {
-                await PageComponent.render(param);
+            if (path === '/') {
+                window.location.href = '/home';
+                return;
+            }
+
+            if (path === '/login') {
+                await LoginPage.render();
+            } else if (path === '/signup') {
+                await SignupPage.render();
+            } else if (path === '/home') {
+                await HomePage.render();
+            } else if (path.startsWith('/profile')) {
+                const username = path.split('/profile/')[1];
+                // Eğer /profile'a doğrudan erişilirse, mevcut kullanıcının profiline yönlendir
+                if (!username || username === '') {
+                    const currentUser = await AuthService.getCurrentUser();
+                    if (currentUser) {
+                        const userProfile = await AuthService.getUserProfile(
+                            currentUser.uid
+                        );
+                        if (userProfile && userProfile.username) {
+                            window.location.href = `/profile/${userProfile.username}`;
+                            return;
+                        }
+                    }
+                }
+                await ProfilePage.render(username);
             } else {
-                await PageComponent.render();
+                console.error('Sayfa bulunamadı');
             }
         } catch (error) {
             console.error('Sayfa render hatası:', error);
-            this.navigateTo('/home');
         }
     }
 
