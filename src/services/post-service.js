@@ -1,81 +1,119 @@
 import { firestore, storage } from './firebase-config.js';
-import { 
-    collection, 
-    addDoc, 
-    query, 
-    where, 
-    getDocs, 
-    doc, 
-    getDoc, 
-    updateDoc, 
-    deleteDoc,
+import {
+    collection,
+    query,
+    where,
+    getDocs,
+    addDoc,
+    getDoc,
+    doc,
     orderBy,
-    limit
+    serverTimestamp,
+    updateDoc,
+    arrayUnion,
 } from 'firebase/firestore';
 import { ref, uploadBytes, getDownloadURL } from 'firebase/storage';
 import { AuthService } from './auth-service.js';
 
 export class PostService {
-    static async uploadPost(file, caption = '') {
-        try {
-            const currentUser = AuthService.getCurrentUser();
-            if (!currentUser) {
-                throw new Error('Kullanıcı oturumu açık değil');
-            }
-
-            const storageRef = ref(storage, `posts/${currentUser.uid}/${Date.now()}_${file.name}`);
-            const snapshot = await uploadBytes(storageRef, file);
-            const downloadURL = await getDownloadURL(snapshot.ref);
-
-            const postData = {
-                userId: currentUser.uid,
-                imageUrl: downloadURL,
-                caption: caption,
-                likes: 0,
-                comments: [],
-                timestamp: new Date()
-            };
-
-            const docRef = await addDoc(collection(firestore, 'posts'), postData);
-
-            return {
-                id: docRef.id,
-                ...postData
-            };
-        } catch (error) {
-            console.error('Gönderi yükleme hatası:', error);
-            throw error;
-        }
-    }
-
     static async getUserPosts(username) {
         try {
-            const userRef = collection(firestore, 'users');
-            const q = query(userRef, where('username', '==', username.toLowerCase()));
-            const querySnapshot = await getDocs(q);
+            // Önce kullanıcının uid'sini username'e göre bulalım
+            const usersRef = collection(firestore, 'users');
+            const userQuery = query(
+                usersRef,
+                where('username', '==', username.toLowerCase())
+            );
+            const userSnapshot = await getDocs(userQuery);
 
-            if (querySnapshot.empty) {
+            if (userSnapshot.empty) {
                 throw new Error('Kullanıcı bulunamadı');
             }
 
-            const userDoc = querySnapshot.docs[0];
-            const userId = userDoc.id;
+            const userId = userSnapshot.docs[0].id;
 
+            // Şimdi bu uid'ye ait postları alalım
             const postsRef = collection(firestore, 'posts');
             const postsQuery = query(
-                postsRef, 
+                postsRef,
                 where('userId', '==', userId),
-                orderBy('timestamp', 'desc')
+                orderBy('createdAt', 'desc')
             );
 
             const postsSnapshot = await getDocs(postsQuery);
 
-            return postsSnapshot.docs.map(doc => ({
-                id: doc.id,
-                ...doc.data()
-            }));
+            if (postsSnapshot.empty) {
+                console.log('Kullanıcıya ait gönderi bulunamadı');
+                return [];
+            }
+
+            const posts = [];
+            postsSnapshot.forEach((doc) => {
+                posts.push({
+                    id: doc.id,
+                    ...doc.data(),
+                    createdAt: doc.data().createdAt?.toDate(),
+                });
+            });
+
+            console.log('Bulunan gönderiler:', posts);
+            return posts;
         } catch (error) {
-            console.error('Kullanıcı gönderileri alınırken hata:', error);
+            console.error('Gönderiler alınırken hata:', error);
+            throw error;
+        }
+    }
+
+    static async uploadPost(imageFile, caption) {
+        try {
+            const currentUser = await AuthService.getCurrentUser();
+            if (!currentUser) {
+                throw new Error('Kullanıcı girişi yapılmamış');
+            }
+
+            const userProfile = await AuthService.getUserProfile(
+                currentUser.uid
+            );
+
+            // Resmi Storage'a yükle
+            const imageRef = ref(
+                storage,
+                `posts/${currentUser.uid}/${Date.now()}_${imageFile.name}`
+            );
+            const uploadResult = await uploadBytes(imageRef, imageFile);
+            const imageUrl = await getDownloadURL(uploadResult.ref);
+
+            // Post bilgilerini Firestore'a kaydet
+            const postData = {
+                userId: currentUser.uid,
+                username: userProfile.username,
+                profileImage: userProfile.profileImage || '/default-avatar.png',
+                imageUrl,
+                caption,
+                likes: 0,
+                comments: [],
+                createdAt: serverTimestamp(),
+            };
+
+            // Posts koleksiyonuna ekle
+            const postsRef = collection(firestore, 'posts');
+            const docRef = await addDoc(postsRef, postData);
+
+            // Kullanıcının posts dizisine post ID'sini ekle
+            const userRef = doc(firestore, 'users', currentUser.uid);
+            await updateDoc(userRef, {
+                posts: arrayUnion(docRef.id),
+            });
+
+            console.log('Yeni post yüklendi:', docRef.id);
+
+            return {
+                id: docRef.id,
+                ...postData,
+                createdAt: new Date(),
+            };
+        } catch (error) {
+            console.error('Gönderi yükleme hatası:', error);
             throw error;
         }
     }
@@ -89,13 +127,13 @@ export class PostService {
 
             const followingRef = doc(firestore, 'followers', currentUser.uid);
             const followingSnap = await getDoc(followingRef);
-            
+
             if (!followingSnap.exists()) {
-                return []; 
+                return [];
             }
 
             const followedUsers = followingSnap.data().following || [];
-            
+
             const postsRef = collection(firestore, 'posts');
             const q = query(
                 postsRef,
@@ -105,11 +143,11 @@ export class PostService {
             );
 
             const querySnapshot = await getDocs(q);
-            
+
             const posts = [];
             for (const postDoc of querySnapshot.docs) {
                 const postData = postDoc.data();
-                
+
                 const userRef = doc(firestore, 'users', postData.userId);
                 const userSnap = await getDoc(userRef);
                 const userData = userSnap.data();
@@ -118,13 +156,16 @@ export class PostService {
                     id: postDoc.id,
                     ...postData,
                     username: userData.username,
-                    profileImage: userData.profileImage
+                    profileImage: userData.profileImage,
                 });
             }
 
             return posts;
         } catch (error) {
-            console.error('Takip edilen kullanıcıların gönderileri alınırken hata:', error);
+            console.error(
+                'Takip edilen kullanıcıların gönderileri alınırken hata:',
+                error
+            );
             return [];
         }
     }
@@ -147,7 +188,7 @@ export class PostService {
                 id: postSnap.id,
                 ...postData,
                 username: userData.username,
-                profileImage: userData.profileImage
+                profileImage: userData.profileImage,
             };
         } catch (error) {
             console.error('Gönderi detayları alınırken hata:', error);
@@ -173,7 +214,7 @@ export class PostService {
             const updatedLikes = (postData.likes || 0) + 1;
 
             await updateDoc(postRef, {
-                likes: updatedLikes
+                likes: updatedLikes,
             });
 
             return updatedLikes;
@@ -205,14 +246,14 @@ export class PostService {
                 userId: currentUser.uid,
                 username: userData.username,
                 text: commentText,
-                timestamp: new Date()
+                timestamp: new Date(),
             };
 
             const postData = postSnap.data();
             const updatedComments = [...(postData.comments || []), newComment];
 
             await updateDoc(postRef, {
-                comments: updatedComments
+                comments: updatedComments,
             });
 
             return newComment;

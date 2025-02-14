@@ -12,7 +12,7 @@ class HomePage {
         }
 
         const appContainer = document.getElementById('app');
-        
+
         if (!appContainer) {
             console.error('App container bulunamadı');
             return;
@@ -46,23 +46,19 @@ class HomePage {
                     color: #0095f6;
                     cursor: pointer;
                 }
-                .logout-btn {
-                    background: none;
-                    border: 1px solid #dbdbdb;
-                    padding: 5px 10px;
-                    border-radius: 4px;
-                    cursor: pointer;
-                }
                 .search-container {
                     position: relative;
                     margin-bottom: 20px;
+                    width: 100%;
+                    max-width: 400px;
                 }
                 .search-input {
                     width: 100%;
-                    padding: 10px;
+                    padding: 12px;
                     border: 1px solid #dbdbdb;
                     border-radius: 8px;
-                    font-size: 16px;
+                    font-size: 14px;
+                    background-color: #fafafa;
                 }
                 .search-results {
                     position: absolute;
@@ -72,26 +68,27 @@ class HomePage {
                     background-color: white;
                     border: 1px solid #dbdbdb;
                     border-radius: 0 0 8px 8px;
-                    max-height: 300px;
+                    max-height: 400px;
                     overflow-y: auto;
-                    z-index: 10;
-                    box-shadow: 0 2px 5px rgba(0,0,0,0.1);
+                    z-index: 1000;
+                    box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+                    margin-top: 4px;
                 }
                 .search-result-item {
                     display: flex;
                     align-items: center;
-                    padding: 10px;
+                    padding: 12px;
                     cursor: pointer;
                     transition: background-color 0.2s;
                 }
                 .search-result-item:hover {
-                    background-color: #f5f5f5;
+                    background-color: #fafafa;
                 }
                 .search-result-item img {
-                    width: 40px;
-                    height: 40px;
+                    width: 44px;
+                    height: 44px;
                     border-radius: 50%;
-                    margin-right: 10px;
+                    margin-right: 12px;
                     object-fit: cover;
                 }
                 .search-result-item .user-info {
@@ -99,11 +96,27 @@ class HomePage {
                     flex-direction: column;
                 }
                 .search-result-item .username {
-                    font-weight: bold;
+                    font-weight: 600;
+                    color: #262626;
+                    font-size: 14px;
                 }
                 .search-result-item .full-name {
                     color: #8e8e8e;
                     font-size: 14px;
+                    margin-top: 2px;
+                }
+                .logout-btn {
+                    padding: 8px 16px;
+                    background-color: #0095f6;
+                    color: white;
+                    border: none;
+                    border-radius: 4px;
+                    cursor: pointer;
+                    font-weight: 600;
+                    transition: background-color 0.2s;
+                }
+                .logout-btn:hover {
+                    background-color: #0081d6;
                 }
                 .feed-container {
                     margin-top: 20px;
@@ -184,7 +197,7 @@ class HomePage {
             const posts = await PostService.getFollowedUsersPosts();
 
             const feedContainer = document.getElementById('feed-container');
-            
+
             if (posts.length === 0) {
                 feedContainer.innerHTML = `
                     <p class="no-posts">
@@ -195,7 +208,9 @@ class HomePage {
                 return;
             }
 
-            feedContainer.innerHTML = posts.map(post => `
+            feedContainer.innerHTML = posts
+                .map(
+                    (post) => `
                 <div class="post-card" data-post-id="${post.id}">
                     <div class="post-header">
                         <img 
@@ -222,10 +237,11 @@ class HomePage {
                         <strong>${post.username}</strong> ${post.caption || ''}
                     </div>
                 </div>
-            `).join('');
+            `
+                )
+                .join('');
 
             this.setupPostEventListeners();
-
         } catch (error) {
             console.error('Gönderiler yüklenirken hata:', error);
             const feedContainer = document.getElementById('feed-container');
@@ -246,18 +262,19 @@ class HomePage {
         // Çıkış butonu event listener'ı
         const logoutBtn = document.getElementById('logout-btn');
         if (logoutBtn) {
-            logoutBtn.addEventListener('click', async (e) => {
-                e.preventDefault();
-                console.log('Çıkış butonuna tıklandı');
+            logoutBtn.addEventListener('click', async () => {
                 try {
-                    await AuthService.logout();
+                    const confirmed = window.confirm(
+                        'Çıkış yapmak istediğinizden emin misiniz?'
+                    );
+                    if (confirmed) {
+                        await AuthService.logout();
+                    }
                 } catch (error) {
                     console.error('Çıkış hatası:', error);
                     alert('Çıkış yapılırken bir hata oluştu');
                 }
             });
-        } else {
-            console.error('Logout butonu bulunamadı');
         }
 
         // Arama input event listener'ı
@@ -266,225 +283,74 @@ class HomePage {
 
         if (searchInput && searchResults) {
             let searchTimeout;
-            
-            searchInput.addEventListener('input', async (e) => {
+
+            searchInput.addEventListener('input', (e) => {
                 clearTimeout(searchTimeout);
-                
+
                 const searchTerm = e.target.value.trim();
-                
                 console.log('Arama terimi:', searchTerm);
 
-                if (searchTerm === '' || searchTerm.length < 2) {
-                    searchResults.innerHTML = '';
+                if (searchTerm === '') {
                     searchResults.style.display = 'none';
                     return;
                 }
 
                 searchTimeout = setTimeout(async () => {
                     try {
-                        const results = await SearchService.searchUsers(searchTerm);
+                        const results = await SearchService.searchUsers(
+                            searchTerm
+                        );
                         console.log('Arama sonuçları:', results);
-                        
-                        this.displaySearchResults(results);
+
+                        if (results.length === 0) {
+                            searchResults.innerHTML =
+                                '<div class="search-result-item">Kullanıcı bulunamadı</div>';
+                        } else {
+                            searchResults.innerHTML = results
+                                .map(
+                                    (user) => `
+                                <div class="search-result-item" data-username="${user.username}">
+                                    <img src="${user.profileImage}" alt="${user.username}">
+                                    <div class="user-info">
+                                        <span class="username">@${user.username}</span>
+                                        <span class="full-name">${user.fullName}</span>
+                                    </div>
+                                </div>
+                            `
+                                )
+                                .join('');
+                        }
+
+                        searchResults.style.display = 'block';
+
+                        // Arama sonuçlarına tıklama olaylarını ekle
+                        const resultItems = searchResults.querySelectorAll(
+                            '.search-result-item'
+                        );
+                        resultItems.forEach((item) => {
+                            item.addEventListener('click', () => {
+                                const username = item.dataset.username;
+                                window.location.href = `/profile/${username}`;
+                            });
+                        });
                     } catch (error) {
                         console.error('Arama hatası:', error);
+                        searchResults.innerHTML =
+                            '<div class="search-result-item">Arama sırasında bir hata oluştu</div>';
                     }
                 }, 300);
             });
 
-            // Dış tıklamalarda arama sonuçlarını gizleme
+            // Sayfa dışına tıklandığında arama sonuçlarını gizle
             document.addEventListener('click', (e) => {
-                if (!e.target.closest('.search-container')) {
-                    searchResults.innerHTML = '';
+                if (
+                    !searchInput.contains(e.target) &&
+                    !searchResults.contains(e.target)
+                ) {
                     searchResults.style.display = 'none';
                 }
             });
-        } else {
-            console.error('Arama inputu veya sonuç alanı bulunamadı');
         }
-    }
-
-    static setupPostEventListeners() {
-        const likeBtns = document.querySelectorAll('.like-btn');
-        const commentBtns = document.querySelectorAll('.comment-btn');
-        const postCards = document.querySelectorAll('.post-card');
-
-        likeBtns.forEach(btn => {
-            btn.addEventListener('click', async (e) => {
-                const postId = e.target.dataset.postId;
-                try {
-                    const newLikeCount = await PostService.likePost(postId);
-                    btn.innerHTML = `❤️ ${newLikeCount}`;
-                } catch (error) {
-                    console.error('Beğeni hatası:', error);
-                }
-            });
-        });
-
-        commentBtns.forEach(btn => {
-            btn.addEventListener('click', async (e) => {
-                const postId = e.target.dataset.postId;
-                const commentText = prompt('Yorumunuzu yazın:');
-                
-                if (commentText) {
-                    try {
-                        await PostService.addComment(postId, commentText);
-                        alert('Yorum başarıyla eklendi');
-                    } catch (error) {
-                        console.error('Yorum ekleme hatası:', error);
-                    }
-                }
-            });
-        });
-
-        postCards.forEach(card => {
-            card.addEventListener('click', async (e) => {
-                if (!e.target.closest('.like-btn, .comment-btn')) {
-                    const postId = card.dataset.postId;
-                    try {
-                        await this.openPostModal(postId);
-                    } catch (error) {
-                        console.error('Gönderi detayı açılırken hata:', error);
-                    }
-                }
-            });
-        });
-    }
-
-    static async openPostModal(postId) {
-        try {
-            const post = await PostService.getPostById(postId);
-            const comments = await PostService.getPostComments(postId);
-
-            const modalHtml = `
-                <div class="post-modal">
-                    <div class="post-modal-content">
-                        <div class="post-modal-image">
-                            <img src="${post.imageUrl}" alt="Gönderi">
-                        </div>
-                        <div class="post-modal-details">
-                            <div class="post-modal-header">
-                                <img 
-                                    src="${post.profileImage || '/default-avatar.png'}" 
-                                    alt="Profil" 
-                                    class="post-user-avatar"
-                                >
-                                <span class="post-username">${post.username}</span>
-                            </div>
-                            <div class="post-modal-caption">
-                                ${post.caption || ''}
-                            </div>
-                            <div class="post-modal-comments">
-                                ${comments.map(comment => `
-                                    <div class="comment">
-                                        <strong>${comment.username}</strong> 
-                                        ${comment.text}
-                                    </div>
-                                `).join('')}
-                            </div>
-                            <div class="post-modal-actions">
-                                <button class="like-btn" data-post-id="${postId}">
-                                    ❤️ ${post.likes || 0}
-                                </button>
-                                <div class="comment-input-container">
-                                    <input 
-                                        type="text" 
-                                        id="comment-input" 
-                                        placeholder="Yorum yap..."
-                                    >
-                                    <button id="send-comment-btn" data-post-id="${postId}">
-                                        Gönder
-                                    </button>
-                                </div>
-                            </div>
-                        </div>
-                        <button class="close-modal-btn">&times;</button>
-                    </div>
-                </div>
-            `;
-
-            document.body.insertAdjacentHTML('beforeend', modalHtml);
-
-            const modal = document.querySelector('.post-modal');
-            const closeBtn = modal.querySelector('.close-modal-btn');
-            const likeBtn = modal.querySelector('.like-btn');
-            const sendCommentBtn = modal.querySelector('#send-comment-btn');
-            const commentInput = modal.querySelector('#comment-input');
-
-            closeBtn.addEventListener('click', () => {
-                modal.remove();
-            });
-
-            likeBtn.addEventListener('click', async () => {
-                try {
-                    const newLikeCount = await PostService.likePost(postId);
-                    likeBtn.innerHTML = `❤️ ${newLikeCount}`;
-                } catch (error) {
-                    console.error('Beğeni hatası:', error);
-                }
-            });
-
-            sendCommentBtn.addEventListener('click', async () => {
-                const commentText = commentInput.value.trim();
-                if (commentText) {
-                    try {
-                        const newComment = await PostService.addComment(postId, commentText);
-                        
-                        const commentsContainer = modal.querySelector('.post-modal-comments');
-                        const commentElement = document.createElement('div');
-                        commentElement.classList.add('comment');
-                        commentElement.innerHTML = `
-                            <strong>${newComment.username}</strong> 
-                            ${newComment.text}
-                        `;
-                        commentsContainer.appendChild(commentElement);
-
-                        commentInput.value = '';
-                    } catch (error) {
-                        console.error('Yorum gönderme hatası:', error);
-                    }
-                }
-            });
-
-        } catch (error) {
-            console.error('Post detayları alınırken hata:', error);
-        }
-    }
-
-    static displaySearchResults(results) {
-        const searchResults = document.getElementById('search-results');
-        
-        if (!searchResults) {
-            console.error('Arama sonuç alanı bulunamadı');
-            return;
-        }
-
-        searchResults.innerHTML = '';
-
-        if (results.length === 0) {
-            searchResults.style.display = 'none';
-            return;
-        }
-
-        results.forEach(user => {
-            const resultItem = document.createElement('div');
-            resultItem.classList.add('search-result-item');
-            resultItem.innerHTML = `
-                <img src="${user.profileImage}" alt="${user.username}">
-                <div class="user-info">
-                    <span class="username">@${user.username}</span>
-                    <span class="full-name">${user.fullName || ''}</span>
-                </div>
-            `;
-
-            resultItem.addEventListener('click', () => {
-                window.location.href = `/profile/${user.username}`;
-            });
-
-            searchResults.appendChild(resultItem);
-        });
-
-        searchResults.style.display = 'block';
     }
 }
 

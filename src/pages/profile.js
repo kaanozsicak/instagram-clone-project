@@ -2,12 +2,12 @@ import { AuthService } from '../services/auth-service.js';
 import { FollowService } from '../services/follow-service.js';
 import { PostService } from '../services/post-service.js';
 import { firestore } from '../services/firebase-config.js';
-import { 
-  collection, 
-  query as firestoreQuery, 
-  where, 
-  getDocs,
-  limit 
+import {
+    collection,
+    query as firestoreQuery,
+    where,
+    getDocs,
+    limit,
 } from 'firebase/firestore';
 
 class ProfilePage {
@@ -33,32 +33,32 @@ class ProfilePage {
             } else {
                 profileUser = await this.getUserByUsername(username);
                 isOwnProfile = profileUser.uid === currentUser.uid;
-                
+
                 if (!isOwnProfile) {
-                    isFollowing = await FollowService.checkFollowStatus(username);
-                    followersCount = await FollowService.getFollowersCount(username);
+                    isFollowing = await FollowService.checkFollowStatus(
+                        username
+                    );
+                    followersCount = await FollowService.getFollowersCount(
+                        username
+                    );
                 }
             }
 
-            try {
-                userPosts = await PostService.getUserPosts(username);
-            } catch (postError) {
-                console.error('Gönderiler alınamadı:', postError);
-                userPosts = [];
-            }
+            console.log('Gönderiler yükleniyor...');
+            userPosts = await PostService.getUserPosts(username);
+            console.log('Yüklenen gönderiler:', userPosts);
 
             profileUser = {
                 fullName: '',
                 username: '',
                 bio: '',
                 profileImage: '/default-avatar.png',
-                ...profileUser
+                ...profileUser,
             };
 
             if (!profileUser) {
                 throw new Error('Kullanıcı bulunamadı');
             }
-
         } catch (error) {
             console.error('Profil yükleme hatası:', error);
             alert('Profil yüklenirken bir hata oluştu');
@@ -67,7 +67,7 @@ class ProfilePage {
         }
 
         const appContainer = document.getElementById('app');
-        
+
         if (!appContainer) {
             console.error('App container bulunamadı');
             return;
@@ -365,6 +365,26 @@ class ProfilePage {
     cursor: pointer;
     z-index: 1001;
 }
+
+.nav-actions {
+    display: flex;
+    align-items: center;
+    gap: 15px;
+}
+
+.logout-btn {
+    background-color: #ff3040;
+    color: white;
+    border: none;
+    padding: 8px 16px;
+    border-radius: 4px;
+    cursor: pointer;
+    font-weight: bold;
+}
+
+.logout-btn:hover {
+    background-color: #e62e3e;
+}
         </style>
         
         <div class="profile-top-nav">
@@ -382,8 +402,11 @@ class ProfilePage {
                 <div class="search-results" id="search-results" style="display: none;"></div>
             </div>
             
-            <div class="notifications-btn">
-                <i class="fas fa-bell"></i>
+            <div class="nav-actions">
+                <div class="notifications-btn">
+                    <i class="fas fa-bell"></i>
+                </div>
+                <button class="logout-btn" id="logout-btn">Çıkış Yap</button>
             </div>
         </div>
 
@@ -395,32 +418,48 @@ class ProfilePage {
                     class="profile-image"
                 >
                 <div class="profile-info">
-                    <div class="profile-username">@${profileUser.username || 'Kullanıcı adı yok'}</div>
-                    <div class="profile-fullname">${profileUser.fullName || 'Ad Soyad belirtilmemiş'}</div>
-                    <div class="profile-bio">${profileUser.bio || 'Henüz bir biyografi eklenmedi'}</div>
+                    <div class="profile-username">@${
+                        profileUser.username || 'Kullanıcı adı yok'
+                    }</div>
+                    <div class="profile-fullname">${
+                        profileUser.fullName || 'Ad Soyad belirtilmemiş'
+                    }</div>
+                    <div class="profile-bio">${
+                        profileUser.bio || 'Henüz bir biyografi eklenmedi'
+                    }</div>
                     
                     <div class="profile-actions">
-                        ${isOwnProfile ? `
+                        ${
+                            isOwnProfile
+                                ? `
                             <button class="edit-profile-btn" id="edit-profile-btn">
                                 Profili Düzenle
                             </button>
-                        ` : `
+                        `
+                                : `
                             <button class="follow-btn" id="follow-btn">
                                 ${isFollowing ? 'Takipten Çık' : 'Takip Et'}
                             </button>
-                        `}
+                        `
+                        }
                     </div>
                     
-                    ${!isOwnProfile ? `
+                    ${
+                        !isOwnProfile
+                            ? `
                         <div class="followers-count">
                             ${followersCount} takipçi
                         </div>
-                    ` : ''}
+                    `
+                            : ''
+                    }
                 </div>
             </div>
             
             <div class="profile-posts">
-                ${isOwnProfile ? `
+                ${
+                    isOwnProfile
+                        ? `
                     <button class="add-post-btn" id="add-post-btn">
                         Gönderi Ekle
                     </button>
@@ -429,197 +468,244 @@ class ProfilePage {
                         id="post-file-input" 
                         accept="image/*"
                     >
-                ` : ''}
+                `
+                        : ''
+                }
                 
                 <div class="posts-grid" id="posts-grid">
-                    ${userPosts.length > 0 
-                        ? userPosts.map(post => `
+                    ${
+                        userPosts.length > 0
+                            ? userPosts
+                                  .map(
+                                      (post) => `
                             <div class="post-item" data-post-id="${post.id}">
                                 <img src="${post.imageUrl}" alt="Gönderi">
                             </div>
-                        `).join('') 
-                        : '<p class="no-posts">Henüz hiç gönderi yok</p>'
+                        `
+                                  )
+                                  .join('')
+                            : '<p class="no-posts">Henüz hiç gönderi yok</p>'
                     }
                 </div>
             </div>
         </div>
     `;
 
-    this.setupEventListeners(isOwnProfile, profileUser, username);
-}
+        this.setupEventListeners(isOwnProfile, profileUser, username);
+    }
 
-static setupEventListeners(isOwnProfile, profileUser, username) {
-    const backBtn = document.getElementById('back-btn');
-    backBtn.addEventListener('click', () => {
-        window.location.href = '/home';
-    });
+    static setupEventListeners(isOwnProfile, profileUser, username) {
+        const backBtn = document.getElementById('back-btn');
+        backBtn.addEventListener('click', () => {
+            window.location.href = '/home';
+        });
 
-    const searchInput = document.getElementById('profile-search-input');
-    const searchResults = document.getElementById('search-results');
+        const searchInput = document.getElementById('profile-search-input');
+        const searchResults = document.getElementById('search-results');
 
-    const debounce = (func, delay) => {
-        let timeoutId;
-        return (...args) => {
-            clearTimeout(timeoutId);
-            timeoutId = setTimeout(() => func.apply(null, args), delay);
+        const debounce = (func, delay) => {
+            let timeoutId;
+            return (...args) => {
+                clearTimeout(timeoutId);
+                timeoutId = setTimeout(() => func.apply(null, args), delay);
+            };
         };
-    };
 
-    const searchUsers = async (query) => {
-        if (query.length < 2) {
-            searchResults.style.display = 'none';
-            return;
-        }
-
-        try {
-            const usersRef = collection(firestore, 'users');
-            const q = firestoreQuery(
-                usersRef, 
-                where('username', '>=', query.toLowerCase()),
-                where('username', '<=', query.toLowerCase() + '\uf8ff'),
-                limit(5)
-            );
-
-            const querySnapshot = await getDocs(q);
-
-            searchResults.innerHTML = '';
-
-            if (querySnapshot.empty) {
-                searchResults.innerHTML = '<div class="search-result-item">Kullanıcı bulunamadı</div>';
-                searchResults.style.display = 'block';
+        const searchUsers = async (query) => {
+            if (query.length < 2) {
+                searchResults.style.display = 'none';
                 return;
             }
 
-            querySnapshot.docs.forEach(doc => {
-                const userData = doc.data();
-                const resultItem = document.createElement('div');
-                resultItem.classList.add('search-result-item');
-                resultItem.innerHTML = `
-                    <img src="${userData.profileImage || '/default-avatar.png'}" alt="Profil">
+            try {
+                const usersRef = collection(firestore, 'users');
+                const q = firestoreQuery(
+                    usersRef,
+                    where('username', '>=', query.toLowerCase()),
+                    where('username', '<=', query.toLowerCase() + '\uf8ff'),
+                    limit(5)
+                );
+
+                const querySnapshot = await getDocs(q);
+
+                searchResults.innerHTML = '';
+
+                if (querySnapshot.empty) {
+                    searchResults.innerHTML =
+                        '<div class="search-result-item">Kullanıcı bulunamadı</div>';
+                    searchResults.style.display = 'block';
+                    return;
+                }
+
+                querySnapshot.docs.forEach((doc) => {
+                    const userData = doc.data();
+                    const resultItem = document.createElement('div');
+                    resultItem.classList.add('search-result-item');
+                    resultItem.innerHTML = `
+                    <img src="${
+                        userData.profileImage || '/default-avatar.png'
+                    }" alt="Profil">
                     <div>
                         <strong>${userData.username}</strong>
                         <p>${userData.fullName || ''}</p>
                     </div>
                 `;
 
-                resultItem.addEventListener('click', () => {
-                    window.location.href = `/profile/${userData.username}`;
-                    searchResults.style.display = 'none';
+                    resultItem.addEventListener('click', () => {
+                        window.location.href = `/profile/${userData.username}`;
+                        searchResults.style.display = 'none';
+                    });
+
+                    searchResults.appendChild(resultItem);
                 });
 
-                searchResults.appendChild(resultItem);
-            });
+                searchResults.style.display = 'block';
+            } catch (error) {
+                console.error('Kullanıcı arama hatası:', error);
+                searchResults.innerHTML =
+                    '<div class="search-result-item">Arama sırasında hata oluştu</div>';
+                searchResults.style.display = 'block';
+            }
+        };
 
-            searchResults.style.display = 'block';
-        } catch (error) {
-            console.error('Kullanıcı arama hatası:', error);
-            searchResults.innerHTML = '<div class="search-result-item">Arama sırasında hata oluştu</div>';
-            searchResults.style.display = 'block';
-        }
-    };
+        const debouncedSearch = debounce(searchUsers, 300);
 
-    const debouncedSearch = debounce(searchUsers, 300);
-
-    searchInput.addEventListener('input', (e) => {
-        debouncedSearch(e.target.value);
-    });
-
-    // Dışarı tıklandığında arama sonuçlarını gizle
-    document.addEventListener('click', (e) => {
-        if (!searchInput.contains(e.target) && !searchResults.contains(e.target)) {
-            searchResults.style.display = 'none';
-        }
-    });
-
-    if (isOwnProfile) {
-        const addPostBtn = document.getElementById('add-post-btn');
-        const postFileInput = document.getElementById('post-file-input');
-        const postsGrid = document.getElementById('posts-grid');
-
-        if (!addPostBtn || !postFileInput || !postsGrid) {
-            console.error('Gerekli DOM elemanları bulunamadı');
-            return;
-        }
-
-        addPostBtn.addEventListener('click', () => {
-            postFileInput.click();
+        searchInput.addEventListener('input', (e) => {
+            debouncedSearch(e.target.value);
         });
 
-        postFileInput.addEventListener('change', async (e) => {
-            const file = e.target.files[0];
-            if (file) {
-                try {
-                    const caption = prompt('Gönderi açıklaması ekle (isteğe bağlı):') || '';
-                    const newPost = await PostService.uploadPost(file, caption);
+        // Dışarı tıklandığında arama sonuçlarını gizle
+        document.addEventListener('click', (e) => {
+            if (
+                !searchInput.contains(e.target) &&
+                !searchResults.contains(e.target)
+            ) {
+                searchResults.style.display = 'none';
+            }
+        });
 
-                    const postElement = document.createElement('div');
-                    postElement.classList.add('post-item');
-                    postElement.dataset.postId = newPost.id;
-                    postElement.innerHTML = `
+        if (isOwnProfile) {
+            const addPostBtn = document.getElementById('add-post-btn');
+            const postFileInput = document.getElementById('post-file-input');
+            const postsGrid = document.getElementById('posts-grid');
+
+            if (!addPostBtn || !postFileInput || !postsGrid) {
+                console.error('Gerekli DOM elemanları bulunamadı');
+                return;
+            }
+
+            addPostBtn.addEventListener('click', () => {
+                postFileInput.click();
+            });
+
+            postFileInput.addEventListener('change', async (e) => {
+                const file = e.target.files[0];
+                if (file) {
+                    try {
+                        const caption =
+                            prompt('Gönderi açıklaması ekle (isteğe bağlı):') ||
+                            '';
+                        const newPost = await PostService.uploadPost(
+                            file,
+                            caption
+                        );
+                        console.log('Yeni post yüklendi:', newPost);
+
+                        const postElement = document.createElement('div');
+                        postElement.classList.add('post-item');
+                        postElement.dataset.postId = newPost.id;
+                        postElement.innerHTML = `
                         <img src="${newPost.imageUrl}" alt="Gönderi">
                     `;
 
-                    const noPostsElement = postsGrid.querySelector('.no-posts');
-                    if (noPostsElement) {
-                        postsGrid.removeChild(noPostsElement);
+                        const noPostsElement =
+                            postsGrid.querySelector('.no-posts');
+                        if (noPostsElement) {
+                            postsGrid.removeChild(noPostsElement);
+                        }
+
+                        postsGrid.insertBefore(
+                            postElement,
+                            postsGrid.firstChild
+                        );
+
+                        postFileInput.value = '';
+                    } catch (error) {
+                        console.error('Gönderi yükleme hatası:', error);
+                        alert('Gönderi yüklenirken bir hata oluştu');
                     }
-                    
-                    postsGrid.insertBefore(postElement, postsGrid.firstChild);
-
-                    postFileInput.value = '';
-                } catch (error) {
-                    console.error('Gönderi yükleme hatası:', error);
-                    alert('Gönderi yüklenirken bir hata oluştu');
                 }
-            }
-        });
-    }
-
-    if (!isOwnProfile) {
-        const followBtn = document.getElementById('follow-btn');
-        followBtn.addEventListener('click', async () => {
-            try {
-                const isCurrentlyFollowing = followBtn.textContent === 'Takipten Çık';
-                
-                if (isCurrentlyFollowing) {
-                    await FollowService.unfollowUser(username);
-                    followBtn.textContent = 'Takip Et';
-                    followBtn.style.backgroundColor = '#0095f6';
-                } else {
-                    await FollowService.followUser(username);
-                    followBtn.textContent = 'Takipten Çık';
-                    followBtn.style.backgroundColor = '#ff3040';
-                }
-
-                const followersCountEl = document.querySelector('.followers-count');
-                if (followersCountEl) {
-                    const newCount = await FollowService.getFollowersCount(username);
-                    followersCountEl.textContent = `${newCount} takipçi`;
-                }
-            } catch (error) {
-                console.error('Takip işlemi hatası:', error);
-                alert('Takip işlemi sırasında bir hata oluştu');
-            }
-        });
-    }
-
-    const postsGrid = document.getElementById('posts-grid');
-    postsGrid.addEventListener('click', async (e) => {
-        const postItem = e.target.closest('.post-item');
-        if (postItem) {
-            const postId = postItem.dataset.postId;
-            await this.openPostModal(postId);
+            });
         }
-    });
-}
 
-static async openPostModal(postId) {
-    try {
-        const post = await PostService.getPostById(postId);
-        const comments = await PostService.getPostComments(postId);
-        const currentUser = AuthService.getCurrentUser();
+        if (!isOwnProfile) {
+            const followBtn = document.getElementById('follow-btn');
+            followBtn.addEventListener('click', async () => {
+                try {
+                    const isCurrentlyFollowing =
+                        followBtn.textContent === 'Takipten Çık';
 
-        const modalHtml = `
+                    if (isCurrentlyFollowing) {
+                        await FollowService.unfollowUser(username);
+                        followBtn.textContent = 'Takip Et';
+                        followBtn.style.backgroundColor = '#0095f6';
+                    } else {
+                        await FollowService.followUser(username);
+                        followBtn.textContent = 'Takipten Çık';
+                        followBtn.style.backgroundColor = '#ff3040';
+                    }
+
+                    const followersCountEl =
+                        document.querySelector('.followers-count');
+                    if (followersCountEl) {
+                        const newCount = await FollowService.getFollowersCount(
+                            username
+                        );
+                        followersCountEl.textContent = `${newCount} takipçi`;
+                    }
+                } catch (error) {
+                    console.error('Takip işlemi hatası:', error);
+                    alert('Takip işlemi sırasında bir hata oluştu');
+                }
+            });
+        }
+
+        const postsGrid = document.getElementById('posts-grid');
+        postsGrid.addEventListener('click', async (e) => {
+            const postItem = e.target.closest('.post-item');
+            if (postItem) {
+                const postId = postItem.dataset.postId;
+                await this.openPostModal(postId);
+            }
+        });
+
+        // Çıkış butonu için event listener
+        const logoutBtn = document.getElementById('logout-btn');
+        if (logoutBtn) {
+            logoutBtn.addEventListener('click', async () => {
+                try {
+                    const confirmed = confirm(
+                        'Çıkış yapmak istediğinizden emin misiniz?'
+                    );
+                    if (confirmed) {
+                        await AuthService.logout();
+                        window.location.href = '/login';
+                    }
+                } catch (error) {
+                    console.error('Çıkış yapma hatası:', error);
+                    alert('Çıkış yapılırken bir hata oluştu');
+                }
+            });
+        }
+    }
+
+    static async openPostModal(postId) {
+        try {
+            const post = await PostService.getPostById(postId);
+            const comments = await PostService.getPostComments(postId);
+            const currentUser = AuthService.getCurrentUser();
+
+            const modalHtml = `
             <div class="post-modal" id="post-modal">
                 <div class="post-modal-content">
                     <div class="post-modal-image">
@@ -627,18 +713,24 @@ static async openPostModal(postId) {
                     </div>
                     <div class="post-modal-details">
                         <div class="post-modal-header">
-                            <img src="${post.profileImage || '/default-avatar.png'}" alt="Profil" class="post-user-avatar">
+                            <img src="${
+                                post.profileImage || '/default-avatar.png'
+                            }" alt="Profil" class="post-user-avatar">
                             <span class="post-username">${post.username}</span>
                         </div>
                         <div class="post-modal-caption">
                             ${post.caption || ''}
                         </div>
                         <div class="post-modal-comments" id="post-comments">
-                            ${comments.map(comment => `
+                            ${comments
+                                .map(
+                                    (comment) => `
                                 <div class="comment">
                                     <strong>${comment.username}</strong> ${comment.text}
                                 </div>
-                            `).join('')}
+                            `
+                                )
+                                .join('')}
                         </div>
                         <div class="post-modal-actions">
                             <button class="like-btn" data-post-id="${postId}">
@@ -659,80 +751,86 @@ static async openPostModal(postId) {
             </div>
         `;
 
-        document.body.insertAdjacentHTML('beforeend', modalHtml);
+            document.body.insertAdjacentHTML('beforeend', modalHtml);
 
-        const modal = document.getElementById('post-modal');
-        const closeBtn = modal.querySelector('.close-modal-btn');
-        const likeBtn = modal.querySelector('.like-btn');
-        const sendCommentBtn = modal.querySelector('#send-comment-btn');
-        const commentInput = modal.querySelector('#comment-input');
+            const modal = document.getElementById('post-modal');
+            const closeBtn = modal.querySelector('.close-modal-btn');
+            const likeBtn = modal.querySelector('.like-btn');
+            const sendCommentBtn = modal.querySelector('#send-comment-btn');
+            const commentInput = modal.querySelector('#comment-input');
 
-        closeBtn.addEventListener('click', () => {
-            modal.remove();
-        });
+            closeBtn.addEventListener('click', () => {
+                modal.remove();
+            });
 
-        likeBtn.addEventListener('click', async () => {
-            try {
-                await PostService.likePost(postId);
-                likeBtn.textContent = `❤️ ${(post.likes || 0) + 1} Beğeni`;
-            } catch (error) {
-                console.error('Beğeni hatası:', error);
-            }
-        });
-
-        sendCommentBtn.addEventListener('click', async () => {
-            const commentText = commentInput.value.trim();
-            if (commentText) {
+            likeBtn.addEventListener('click', async () => {
                 try {
-                    const newComment = await PostService.addComment(postId, commentText);
-                    
-                    const commentsContainer = document.getElementById('post-comments');
-                    const commentElement = document.createElement('div');
-                    commentElement.classList.add('comment');
-                    commentElement.innerHTML = `
+                    await PostService.likePost(postId);
+                    likeBtn.textContent = `❤️ ${(post.likes || 0) + 1} Beğeni`;
+                } catch (error) {
+                    console.error('Beğeni hatası:', error);
+                }
+            });
+
+            sendCommentBtn.addEventListener('click', async () => {
+                const commentText = commentInput.value.trim();
+                if (commentText) {
+                    try {
+                        const newComment = await PostService.addComment(
+                            postId,
+                            commentText
+                        );
+
+                        const commentsContainer =
+                            document.getElementById('post-comments');
+                        const commentElement = document.createElement('div');
+                        commentElement.classList.add('comment');
+                        commentElement.innerHTML = `
                         <strong>${newComment.username}</strong> ${newComment.text}
                     `;
-                    commentsContainer.appendChild(commentElement);
+                        commentsContainer.appendChild(commentElement);
 
-                    commentInput.value = '';
-                } catch (error) {
-                    console.error('Yorum gönderme hatası:', error);
+                        commentInput.value = '';
+                    } catch (error) {
+                        console.error('Yorum gönderme hatası:', error);
+                    }
                 }
-            }
-        });
-
-    } catch (error) {
-        console.error('Post detayları alınırken hata:', error);
-    }
-}
-
-static async getUserByUsername(username) {
-    try {
-        const usersRef = collection(firestore, 'users');
-        const q = firestoreQuery(usersRef, where('username', '==', username.toLowerCase()));
-        
-        const querySnapshot = await getDocs(q);
-        
-        if (querySnapshot.empty) {
-            throw new Error('Kullanıcı bulunamadı');
+            });
+        } catch (error) {
+            console.error('Post detayları alınırken hata:', error);
         }
-
-        const userDoc = querySnapshot.docs[0];
-        const userData = userDoc.data();
-
-        return {
-            uid: userDoc.id,
-            fullName: userData.fullName || '',
-            username: userData.username || '',
-            bio: userData.bio || '',
-            profileImage: userData.profileImage || '/default-avatar.png',
-            ...userData
-        };
-    } catch (error) {
-        console.error('Kullanıcı arama hatası:', error);
-        throw error;
     }
-}
+
+    static async getUserByUsername(username) {
+        try {
+            const usersRef = collection(firestore, 'users');
+            const q = firestoreQuery(
+                usersRef,
+                where('username', '==', username.toLowerCase())
+            );
+
+            const querySnapshot = await getDocs(q);
+
+            if (querySnapshot.empty) {
+                throw new Error('Kullanıcı bulunamadı');
+            }
+
+            const userDoc = querySnapshot.docs[0];
+            const userData = userDoc.data();
+
+            return {
+                uid: userDoc.id,
+                fullName: userData.fullName || '',
+                username: userData.username || '',
+                bio: userData.bio || '',
+                profileImage: userData.profileImage || '/default-avatar.png',
+                ...userData,
+            };
+        } catch (error) {
+            console.error('Kullanıcı arama hatası:', error);
+            throw error;
+        }
+    }
 }
 
 export default ProfilePage;
