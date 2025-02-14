@@ -1,3 +1,4 @@
+# THE PROJECT IS STILL UNDER DEVELOPMENT.
 # Instagram Clone Projesi
 
 ## Proje Açıklaması
