@@ -1,13 +1,9 @@
 import { initializeApp } from 'firebase/app';
 import { getAuth } from 'firebase/auth';
-import {
-    getFirestore,
-    initializeFirestore,
-    persistentLocalCache,
-    persistentMultipleTabManager,
-} from 'firebase/firestore';
+import { getFirestore } from 'firebase/firestore';
 import { getStorage } from 'firebase/storage';
 
+// Firebase yapılandırması
 const firebaseConfig = {
     apiKey: import.meta.env.VITE_FIREBASE_API_KEY,
     authDomain: import.meta.env.VITE_FIREBASE_AUTH_DOMAIN,
@@ -17,26 +13,13 @@ const firebaseConfig = {
     appId: import.meta.env.VITE_FIREBASE_APP_ID,
 };
 
-console.log('Firebase Config:', {
-    apiKey: firebaseConfig.apiKey ? 'API Key mevcut' : 'API Key eksik',
-    authDomain: firebaseConfig.authDomain,
-    projectId: firebaseConfig.projectId,
-});
-
 // Firebase uygulamasını başlat
 const app = initializeApp(firebaseConfig);
 
-// Auth'u başlat
-const auth = getAuth(app);
+// Servisleri başlat ve export et
+export const auth = getAuth(app);
+export const firestore = getFirestore(app);
+export const storage = getStorage(app);
 
-// Firestore'u yeni cache yapılandırmasıyla başlat
-const firestore = initializeFirestore(app, {
-    cache: persistentLocalCache({
-        tabManager: persistentMultipleTabManager(),
-    }),
-});
-
-// Storage'ı başlat
-const storage = getStorage(app);
-
-export { auth, firestore, storage };
+// Firebase app instance'ını da export et
+export default app;

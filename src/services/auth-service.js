@@ -11,9 +11,7 @@ import {
 } from 'firebase/auth';
 import { ref, uploadBytes, getDownloadURL } from 'firebase/storage';
 import { collection, query, where, getDocs } from 'firebase/firestore';
-import { auth } from './firebase-config.js';
-import { firestore } from './firebase-config.js';
-import { storage } from './firebase-config.js';
+import { auth, firestore, storage } from './firebase-config.js';
 import { doc, setDoc, getDoc, updateDoc } from 'firebase/firestore';
 
 export class AuthService {
@@ -351,16 +349,10 @@ export class AuthService {
 
     static async logout() {
         try {
-            // Firebase oturumunu kapat
             await signOut(auth);
-
-            // Storage'ları temizle
             localStorage.clear();
             sessionStorage.clear();
-
-            console.log('Başarıyla çıkış yapıldı');
-
-            return true;
+            window.location.href = '/login';
         } catch (error) {
             console.error('Çıkış yapılırken hata:', error);
             throw error;
