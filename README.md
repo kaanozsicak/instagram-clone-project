@@ -4,7 +4,7 @@
 
 ## Proje Açıklaması
 
-Bu proje, modern web teknolojileri kullanılarak geliştirilmiş bir Instagram klonudur. Firebase altyapısını kullanarak gerçek zamanlı etkileşimler ve kullanıcı yönetimi sağlar.
+Bu proje, modern web teknolojileri kullanılarak geliştirilmiş bir Instagram klonudur. Firebase altyapısını kullanarak gerçek zamanlı etkileşimler ve kullanıcı yönetimi sağlar. Projenin web sitesi güncelleme sırasında kapatılmaktadır. Eğer burada bir link görmüyorsanız, proje o sırada güncelleme aşamasındadır.
 
 ## Özellikler
 
