@@ -25,12 +25,432 @@ class HomePage {
 
             // Sayfayı oluştur
             appContainer.innerHTML = `
+                <style>
+                    :root {
+                        --primary-color: #5563de;
+                        --primary-light: #7b87e7;
+                        --primary-dark: #3a47c2;
+                        --secondary-color: #f27059;
+                        --bg-color: #f5f8fc;
+                        --card-color: #ffffff;
+                        --text-primary: #333333;
+                        --text-secondary: #666666;
+                        --border-color: #e1e4ea;
+                        --error-color: #e74c3c;
+                        --success-color: #2ecc71;
+                    }
+                    
+                    .home-page {
+                        max-width: 1200px;
+                        margin: 0 auto;
+                        padding: 20px;
+                        font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+                        background-color: var(--bg-color);
+                        min-height: 100vh;
+                    }
+                    
+                    .header {
+                        display: flex;
+                        justify-content: space-between;
+                        align-items: center;
+                        margin-bottom: 30px;
+                        padding: 15px 20px;
+                        background-color: var(--card-color);
+                        border-radius: 16px;
+                        box-shadow: 0 4px 12px rgba(0,0,0,0.08);
+                        position: relative;
+                    }
+                    
+                    .header::before {
+                        content: '';
+                        position: absolute;
+                        top: 0;
+                        left: 0;
+                        right: 0;
+                        height: 6px;
+                        background: linear-gradient(to right, var(--primary-color), var(--secondary-color));
+                        border-top-left-radius: 16px;
+                        border-top-right-radius: 16px;
+                    }
+                    
+                    .app-logo {
+                        font-size: 24px;
+                        font-weight: 700;
+                        color: var(--primary-color);
+                    }
+                    
+                    nav {
+                        display: flex;
+                        gap: 15px;
+                        align-items: center;
+                    }
+                    
+                    #profile-link {
+                        color: var(--primary-color);
+                        text-decoration: none;
+                        font-weight: 600;
+                        transition: all 0.2s ease;
+                        padding: 8px 12px;
+                        border-radius: 8px;
+                    }
+                    
+                    #profile-link:hover {
+                        background-color: rgba(85, 99, 222, 0.1);
+                    }
+                    
+                    #logout-button {
+                        background-color: var(--error-color);
+                        color: white;
+                        border: none;
+                        padding: 8px 16px;
+                        border-radius: 8px;
+                        font-weight: 600;
+                        cursor: pointer;
+                        transition: background-color 0.2s ease, transform 0.1s ease;
+                    }
+                    
+                    #logout-button:hover {
+                        background-color: #c0392b;
+                        transform: translateY(-1px);
+                    }
+                    
+                    .home-content {
+                        display: grid;
+                        grid-template-columns: 2fr 1fr;
+                        gap: 30px;
+                    }
+                    
+                    @media (max-width: 992px) {
+                        .home-content {
+                            grid-template-columns: 1fr;
+                        }
+                    }
+                    
+                    .search-box {
+                        position: relative;
+                        margin-bottom: 30px;
+                    }
+                    
+                    #search-input {
+                        width: 100%;
+                        padding: 12px 16px;
+                        border: 1px solid var(--border-color);
+                        border-radius: 8px;
+                        font-size: 15px;
+                        background-color: #f9fafc;
+                        color: var(--text-primary);
+                        transition: all 0.2s ease;
+                    }
+                    
+                    #search-input:focus {
+                        outline: none;
+                        border-color: var(--primary-color);
+                        box-shadow: 0 0 0 3px rgba(85, 99, 222, 0.2);
+                    }
+                    
+                    #search-results {
+                        position: absolute;
+                        top: 100%;
+                        left: 0;
+                        width: 100%;
+                        background: var(--card-color);
+                        border: 1px solid var(--border-color);
+                        border-top: none;
+                        border-radius: 0 0 8px 8px;
+                        z-index: 10;
+                        max-height: 300px;
+                        overflow-y: auto;
+                        box-shadow: 0 4px 12px rgba(0,0,0,0.08);
+                    }
+                    
+                    .search-result-item {
+                        padding: 12px 16px;
+                        border-bottom: 1px solid var(--border-color);
+                        cursor: pointer;
+                        transition: background-color 0.2s ease;
+                    }
+                    
+                    .search-result-item:hover {
+                        background-color: rgba(85, 99, 222, 0.05);
+                    }
+                    
+                    .search-result-item:last-child {
+                        border-bottom: none;
+                    }
+                    
+                    .posts-container {
+                        display: flex;
+                        flex-direction: column;
+                        gap: 30px;
+                    }
+                    
+                    .post-card {
+                        background-color: var(--card-color);
+                        border-radius: 16px;
+                        overflow: hidden;
+                        box-shadow: 0 4px 12px rgba(0,0,0,0.08);
+                    }
+                    
+                    .post-header {
+                        padding: 15px;
+                        display: flex;
+                        align-items: center;
+                        gap: 12px;
+                        border-bottom: 1px solid var(--border-color);
+                    }
+                    
+                    .user-avatar {
+                        width: 40px;
+                        height: 40px;
+                        border-radius: 50%;
+                        object-fit: cover;
+                        border: 2px solid var(--primary-light);
+                    }
+                    
+                    .username {
+                        font-weight: 600;
+                        color: var(--text-primary);
+                    }
+                    
+                    .post-image {
+                        width: 100%;
+                        max-height: 600px;
+                        object-fit: cover;
+                    }
+                    
+                    .post-image img {
+                        width: 100%;
+                        display: block;
+                    }
+                    
+                    .post-actions {
+                        padding: 15px;
+                    }
+                    
+                    .action-icons {
+                        display: flex;
+                        gap: 20px;
+                        margin-bottom: 15px;
+                        font-size: 24px;
+                    }
+                    
+                    .action-icons i {
+                        color: var(--text-primary);
+                        cursor: pointer;
+                        transition: all 0.2s ease;
+                    }
+                    
+                    .action-icons i:hover {
+                        color: var(--primary-color);
+                        transform: scale(1.1);
+                    }
+                    
+                    .post-likes {
+                        font-weight: 600;
+                        margin-bottom: 8px;
+                        color: var(--text-primary);
+                    }
+                    
+                    .post-caption {
+                        margin-bottom: 12px;
+                        color: var(--text-primary);
+                    }
+                    
+                    .post-caption .username {
+                        font-weight: 600;
+                    }
+                    
+                    .post-comments-link {
+                        color: var(--text-secondary);
+                        font-size: 14px;
+                        cursor: pointer;
+                        display: block;
+                        margin-bottom: 10px;
+                    }
+                    
+                    .post-add-comment {
+                        display: flex;
+                        border-top: 1px solid var(--border-color);
+                        padding-top: 15px;
+                    }
+                    
+                    .post-add-comment input {
+                        flex: 1;
+                        border: none;
+                        outline: none;
+                        padding: 10px 0;
+                        font-size: 14px;
+                        color: var(--text-primary);
+                    }
+                    
+                    .post-add-comment button {
+                        background: none;
+                        border: none;
+                        color: var(--primary-color);
+                        font-weight: 600;
+                        cursor: pointer;
+                        padding: 0 10px;
+                    }
+                    
+                    .post-add-comment button:disabled {
+                        color: var(--text-secondary);
+                        cursor: default;
+                        opacity: 0.7;
+                    }
+                    
+                    .notification-container {
+                        position: relative;
+                        margin-right: 15px;
+                    }
+                    
+                    #notification-btn {
+                        background: none;
+                        border: none;
+                        font-size: 20px;
+                        cursor: pointer;
+                        position: relative;
+                        color: var(--text-secondary);
+                        transition: color 0.2s ease;
+                        padding: 5px;
+                        border-radius: 50%;
+                        display: flex;
+                        align-items: center;
+                        justify-content: center;
+                    }
+                    
+                    #notification-btn:hover {
+                        color: var(--primary-color);
+                        background-color: rgba(85, 99, 222, 0.1);
+                    }
+                    
+                    #notification-count {
+                        position: absolute;
+                        top: -5px;
+                        right: -5px;
+                        background-color: var(--secondary-color);
+                        color: white;
+                        border-radius: 50%;
+                        padding: 0 6px;
+                        font-size: 12px;
+                        min-width: 20px;
+                        height: 20px;
+                        display: flex;
+                        align-items: center;
+                        justify-content: center;
+                    }
+                    
+                    .notification-panel {
+                        position: absolute;
+                        top: 100%;
+                        right: 0;
+                        width: 320px;
+                        background-color: var(--card-color);
+                        border-radius: 12px;
+                        box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+                        z-index: 100;
+                        overflow: hidden;
+                        display: none;
+                    }
+                    
+                    .notification-header {
+                        background: linear-gradient(to right, var(--primary-color), var(--secondary-color));
+                        color: white;
+                        padding: 12px 15px;
+                        text-align: center;
+                        font-weight: 600;
+                    }
+                    
+                    .notifications-list {
+                        max-height: 400px;
+                        overflow-y: auto;
+                    }
+                    
+                    .notification-item {
+                        padding: 12px 15px;
+                        border-bottom: 1px solid var(--border-color);
+                    }
+                    
+                    .notification-item:last-child {
+                        border-bottom: none;
+                    }
+                    
+                    .notification-content {
+                        margin-bottom: 8px;
+                        color: var(--text-primary);
+                    }
+                    
+                    .notification-actions {
+                        display: flex;
+                        gap: 10px;
+                    }
+                    
+                    .notification-actions button {
+                        padding: 6px 12px;
+                        border: none;
+                        border-radius: 6px;
+                        cursor: pointer;
+                        font-weight: 500;
+                        font-size: 14px;
+                        transition: all 0.2s ease;
+                    }
+                    
+                    .accept-btn {
+                        background-color: var(--primary-color);
+                        color: white;
+                    }
+                    
+                    .accept-btn:hover {
+                        background-color: var(--primary-dark);
+                    }
+                    
+                    .reject-btn {
+                        background-color: var(--error-color);
+                        color: white;
+                    }
+                    
+                    .reject-btn:hover {
+                        background-color: #c0392b;
+                    }
+                    
+                    .notification-empty {
+                        padding: 20px;
+                        text-align: center;
+                        color: var(--text-secondary);
+                        font-style: italic;
+                    }
+                    
+                    .notification-time {
+                        font-size: 12px;
+                        color: var(--text-secondary);
+                    }
+                    
+                    .empty-state {
+                        text-align: center;
+                        padding: 40px 20px;
+                        background-color: var(--card-color);
+                        border-radius: 16px;
+                        box-shadow: 0 4px 12px rgba(0,0,0,0.08);
+                    }
+                    
+                    .empty-state h3 {
+                        color: var(--text-primary);
+                        margin-bottom: 10px;
+                    }
+                    
+                    .empty-state p {
+                        color: var(--text-secondary);
+                    }
+                </style>
+                
                 <div class="home-page">
                     <header class="header">
-                        <h1>Instagram Clone</h1>
+                        <h1 class="app-logo">Photogram</h1>
                         <nav>
                             <div class="notification-container">
-                                <button id="notification-btn">🔔 <span id="notification-count">0</span></button>
+                                <button id="notification-btn">
+                                    <i class="fas fa-bell"></i>
+                                    <span id="notification-count">0</span>
+                                </button>
                                 <div id="notification-panel" class="notification-panel">
                                     <div class="notification-header">Bildirimler</div>
                                     <div id="notifications-list" class="notifications-list">
@@ -43,223 +463,125 @@ class HomePage {
                         </nav>
                     </header>
                     
-                    <main>
-                        <div class="search-box">
-                            <input type="text" id="search-input" placeholder="Kullanıcı ara...">
-                            <div id="search-results"></div>
+                    <main class="home-content">
+                        <div>
+                            <div class="search-box">
+                                <input type="text" id="search-input" placeholder="Kullanıcı ara...">
+                                <div id="search-results" style="display: none;"></div>
+                            </div>
+                            
+                            <div class="posts-container" id="posts-container">
+                                <div class="empty-state">
+                                    <h3>Gönderiler yükleniyor...</h3>
+                                    <p>Lütfen bekleyiniz</p>
+                                </div>
+                            </div>
                         </div>
                         
-                        <div class="posts-container" id="posts-container">
-                            <p>Gönderiler yükleniyor...</p>
+                        <div class="sidebar">
+                            <div class="profile-card post-card">
+                                <div class="post-header">
+                                    <img 
+                                        src="${
+                                            currentUser?.profile
+                                                ?.profilePicture ||
+                                            'https://via.placeholder.com/150'
+                                        }" 
+                                        alt="${
+                                            currentUser?.profile?.username ||
+                                            'Kullanıcı'
+                                        }"
+                                        class="user-avatar"
+                                    >
+                                    <div>
+                                        <div class="username">@${
+                                            currentUser?.profile?.username ||
+                                            'kullanici'
+                                        }</div>
+                                        <div style="color: var(--text-secondary); font-size: 14px;">
+                                            ${
+                                                currentUser?.profile
+                                                    ?.fullName || ''
+                                            }
+                                        </div>
+                                    </div>
+                                </div>
+                                
+                                <div style="padding: 15px;">
+                                    <button class="new-post-btn" style="
+                                        background-color: var(--primary-color);
+                                        color: white;
+                                        border: none;
+                                        border-radius: 8px;
+                                        padding: 10px 16px;
+                                        font-weight: 600;
+                                        cursor: pointer;
+                                        width: 100%;
+                                        transition: background-color 0.2s ease;
+                                    ">
+                                        Yeni Gönderi Oluştur
+                                    </button>
+                                </div>
+                            </div>
+                            
+                            <div class="suggested-users post-card" style="margin-top: 30px;">
+                                <div style="padding: 15px; border-bottom: 1px solid var(--border-color);">
+                                    <h3 style="margin: 0; color: var(--text-primary);">Senin İçin Öneriler</h3>
+                                </div>
+                                
+                                <div style="padding: 15px;">
+                                    <div style="display: flex; align-items: center; margin-bottom: 15px;">
+                                        <img src="https://via.placeholder.com/150" alt="Kullanıcı" class="user-avatar" style="width: 32px; height: 32px; margin-right: 10px;">
+                                        <div style="flex: 1;">
+                                            <div class="username">@kullanici1</div>
+                                        </div>
+                                        <button style="
+                                            background: none; 
+                                            border: none; 
+                                            color: var(--primary-color);
+                                            font-weight: 600;
+                                            cursor: pointer;
+                                        ">
+                                            Takip Et
+                                        </button>
+                                    </div>
+                                    
+                                    <div style="display: flex; align-items: center; margin-bottom: 15px;">
+                                        <img src="https://via.placeholder.com/150" alt="Kullanıcı" class="user-avatar" style="width: 32px; height: 32px; margin-right: 10px;">
+                                        <div style="flex: 1;">
+                                            <div class="username">@kullanici2</div>
+                                        </div>
+                                        <button style="
+                                            background: none; 
+                                            border: none; 
+                                            color: var(--primary-color);
+                                            font-weight: 600;
+                                            cursor: pointer;
+                                        ">
+                                            Takip Et
+                                        </button>
+                                    </div>
+                                    
+                                    <div style="display: flex; align-items: center;">
+                                        <img src="https://via.placeholder.com/150" alt="Kullanıcı" class="user-avatar" style="width: 32px; height: 32px; margin-right: 10px;">
+                                        <div style="flex: 1;">
+                                            <div class="username">@kullanici3</div>
+                                        </div>
+                                        <button style="
+                                            background: none; 
+                                            border: none; 
+                                            color: var(--primary-color);
+                                            font-weight: 600;
+                                            cursor: pointer;
+                                        ">
+                                            Takip Et
+                                        </button>
+                                    </div>
+                                </div>
+                            </div>
                         </div>
                     </main>
                 </div>
-                
-                <style>
-                    .home-page {
-                        max-width: 600px;
-                        margin: 0 auto;
-                        padding: 20px;
-                    }
-                    
-                    .header {
-                        display: flex;
-                        justify-content: space-between;
-                        align-items: center;
-                        margin-bottom: 20px;
-                        padding-bottom: 10px;
-                        border-bottom: 1px solid #ddd;
-                    }
-                    
-                    nav {
-                        display: flex;
-                        gap: 15px;
-                        align-items: center;
-                    }
-                    
-                    #profile-link {
-                        color: #0095f6;
-                        text-decoration: none;
-                        font-weight: bold;
-                    }
-                    
-                    #logout-button {
-                        background: #ff3b30;
-                        color: white;
-                        border: none;
-                        padding: 8px 16px;
-                        border-radius: 4px;
-                        cursor: pointer;
-                    }
-                    
-                    .search-box {
-                        margin-bottom: 20px;
-                        position: relative;
-                    }
-                    
-                    #search-input {
-                        width: 100%;
-                        padding: 10px;
-                        border: 1px solid #ddd;
-                        border-radius: 4px;
-                    }
-                    
-                    #search-results {
-                        position: absolute;
-                        top: 100%;
-                        left: 0;
-                        width: 100%;
-                        background: white;
-                        border: 1px solid #ddd;
-                        border-top: none;
-                        display: none;
-                        z-index: 10;
-                    }
-                    
-                    .search-result-item {
-                        padding: 10px;
-                        border-bottom: 1px solid #eee;
-                        cursor: pointer;
-                    }
-                    
-                    .search-result-item:hover {
-                        background: #f9f9f9;
-                    }
-                    
-                    .posts-container {
-                        display: flex;
-                        flex-direction: column;
-                        gap: 20px;
-                    }
-                    
-                    .post-card {
-                        border: 1px solid #ddd;
-                        border-radius: 8px;
-                        overflow: hidden;
-                    }
-                    
-                    .post-header {
-                        padding: 10px;
-                        display: flex;
-                        align-items: center;
-                        gap: 10px;
-                    }
-                    
-                    .post-image {
-                        width: 100%;
-                        max-height: 500px;
-                        object-fit: cover;
-                    }
-                    
-                    .post-actions {
-                        padding: 10px;
-                        display: flex;
-                        gap: 15px;
-                    }
-                    
-                    .post-caption {
-                        padding: 0 10px 10px;
-                    }
-
-                    .notification-container {
-                        position: relative;
-                        margin-right: 15px;
-                    }
-                    
-                    #notification-btn {
-                        background: none;
-                        border: none;
-                        font-size: 20px;
-                        cursor: pointer;
-                        position: relative;
-                    }
-                    
-                    #notification-count {
-                        position: absolute;
-                        top: -5px;
-                        right: -8px;
-                        background-color: #ff3b30;
-                        color: white;
-                        border-radius: 50%;
-                        padding: 0 6px;
-                        font-size: 12px;
-                        min-width: 18px;
-                        text-align: center;
-                        display: inline-block;
-                    }
-                    
-                    .notification-panel {
-                        position: absolute;
-                        top: 100%;
-                        right: 0;
-                        width: 300px;
-                        background-color: white;
-                        border: 1px solid #ddd;
-                        border-radius: 8px;
-                        box-shadow: 0 4px 12px rgba(0,0,0,0.15);
-                        z-index: 1000;
-                        display: none;
-                    }
-                    
-                    .notification-header {
-                        padding: 10px;
-                        border-bottom: 1px solid #ddd;
-                        font-weight: bold;
-                        text-align: center;
-                    }
-                    
-                    .notifications-list {
-                        max-height: 400px;
-                        overflow-y: auto;
-                    }
-                    
-                    .notification-item {
-                        padding: 12px;
-                        border-bottom: 1px solid #f1f1f1;
-                    }
-                    
-                    .notification-item:last-child {
-                        border-bottom: none;
-                    }
-                    
-                    .notification-content {
-                        margin-bottom: 10px;
-                    }
-                    
-                    .notification-actions {
-                        display: flex;
-                        gap: 8px;
-                    }
-                    
-                    .notification-actions button {
-                        padding: 6px 10px;
-                        border: none;
-                        border-radius: 4px;
-                        cursor: pointer;
-                    }
-                    
-                    .accept-btn {
-                        background-color: #0095f6;
-                        color: white;
-                    }
-                    
-                    .reject-btn {
-                        background-color: #ff3b30;
-                        color: white;
-                    }
-                    
-                    .notification-empty {
-                        padding: 15px;
-                        text-align: center;
-                        color: #8e8e8e;
-                    }
-                    
-                    .notification-time {
-                        font-size: 12px;
-                        color: #8e8e8e;
-                        margin-top: 5px;
-                    }
-                </style>
             `;
 
             // Event listener'ları ayarla

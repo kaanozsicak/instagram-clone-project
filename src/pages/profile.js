@@ -110,438 +110,784 @@ class ProfilePage {
 
             // HTML template'ini render et
             appContainer.innerHTML = `
-        <style>
-            .profile-container {
-                max-width: 800px;
-                margin: 0 auto;
-                padding: 20px;
-                font-family: 'Arial', sans-serif;
-            }
-            .profile-top-nav {
-                display: flex;
-                align-items: center;
-                justify-content: space-between;
-                padding: 10px 20px;
-                border-bottom: 1px solid #dbdbdb;
-                background-color: white;
-                position: sticky;
-                top: 0;
-                z-index: 100;
-            }
-            .back-btn {
-                background: none;
-                border: none;
-                font-size: 24px;
-                cursor: pointer;
-            }
-            .search-container {
-               display: flex;
-     align-items: center;
-    background-color: #efefef;
-    border-radius: 10px;
-    padding: 8px 12px;
-    width: 250px; // Genişliği sınırlandırın
-    margin: 0 15px;
-    position: relative;
-}
-            .search-container i {
-                color: #8e8e8e;
-            }
-            .search-container input {
-                border: none;
-                background: none;
-                width: 100%;
-                outline: none;
-                margin-left: 10px;
-            }
-            .search-results {
-    position: absolute;
-    top: 100%;
-    left: 0;
-    width: 100%;
-    background-color: white;
-    border: 1px solid #dbdbdb;
-    border-top: none;
-    max-height: 300px;
-    overflow-y: auto;
-    z-index: 1000;
-    box-shadow: 0 4px 6px rgba(0,0,0,0.1);
-    border-radius: 0 0 10px 10px;
-}
-            .search-result-item {
-                display: flex;
-                align-items: center;
-                padding: 10px;
-                cursor: pointer;
-                transition: background-color 0.2s;
-            }
-            .search-result-item:hover {
-                background-color: #f0f0f0;
-            }
-            .search-result-item img {
-                width: 50px;
-                height: 50px;
-                border-radius: 50%;
-                margin-right: 15px;
-                object-fit: cover;
-            }
-            .notifications-btn {
-                font-size: 20px;
-                color: #262626;
-                cursor: pointer;
-            }
-            .profile-header {
-                display: flex;
-                align-items: center;
-                margin-bottom: 30px;
-            }
-            .profile-image {
-                width: 150px;
-                height: 150px;
-                border-radius: 50%;
-                object-fit: cover;
-                margin-right: 30px;
-            }
-            .profile-info {
-                flex-grow: 1;
-            }
-            .profile-username {
-                font-size: 24px;
-                margin-bottom: 10px;
-            }
-            .profile-fullname {
-                font-size: 18px;
-                color: #8e8e8e;
-            }
-            .profile-bio {
-                margin-top: 10px;
-                color: #262626;
-            }
-            .profile-actions {
-                margin-top: 20px;
-                display: flex;
-                align-items: center;
-            }
-            .edit-profile-btn, .follow-btn {
-                background-color: #0095f6;
-                color: white;
-                border: none;
-                padding: 8px 16px;
-                border-radius: 4px;
-                cursor: pointer;
-                margin-right: 10px;
-            }
-            .follow-btn {
-                background-color: ${pageData.followBtnColor};
-            }
-            .followers-count {
-                margin-top: 10px;
-                color: #262626;
-                font-weight: bold;
-            }
-            .posts-grid {
-                display: grid;
-                grid-template-columns: repeat(3, 1fr);
-                gap: 10px;
-                margin-top: 20px;
-            }
-            .post-item {
-                position: relative;
-                width: 100%;
-                padding-top: 100%;
-                overflow: hidden;
-                cursor: pointer;
-            }
-            .post-item img {
-                position: absolute;
-                top: 0;
-                left: 0;
-                width: 100%;
-                height: 100%;
-                object-fit: cover;
-            }
-            .add-post-btn {
-                background-color: #0095f6;
-                color: white;
-                border: none;
-                padding: 10px 20px;
-                border-radius: 4px;
-                cursor: pointer;
-                margin-top: 10px;
-            }
-            #post-file-input {
-                display: none;
-            }
-            .no-posts {
-                text-align: center;
-                color: #8e8e8e;
-                margin-top: 30px;
-            }
-            
-            .post-modal {
-    position: fixed;
-    top: 0;
-    left: 0;
-    width: 100%;
-    height: 100%;
-    background-color: rgba(0, 0, 0, 0.8);
-    display: flex;
-    justify-content: center;
-    align-items: center;
-    z-index: 1000;
-}
-
-.post-modal-content {
-    display: flex;
-    width: 90%;
-    max-width: 1200px;
-    height: 80%;
-    background-color: white;
-    border-radius: 12px;
-    overflow: hidden;
-}
-
-.post-modal-image {
-    flex: 2;
-    background-color: black;
-    display: flex;
-    justify-content: center;
-    align-items: center;
-}
-
-.post-modal-image img {
-    max-width: 100%;
-    max-height: 100%;
-    object-fit: contain;
-}
-
-.post-modal-details {
-    flex: 1;
-    display: flex;
-    flex-direction: column;
-    border-left: 1px solid #dbdbdb;
-}
-
-.post-modal-header {
-    display: flex;
-    align-items: center;
-    padding: 15px;
-    border-bottom: 1px solid #dbdbdb;
-}
-
-.post-user-avatar {
-    width: 40px;
-    height: 40px;
-    border-radius: 50%;
-    margin-right: 10px;
-    object-fit: cover;
-}
-
-.post-username {
-    font-weight: bold;
-}
-
-.post-modal-caption {
-    padding: 15px;
-    border-bottom: 1px solid #dbdbdb;
-}
-
-.post-modal-comments {
-    flex-grow: 1;
-    overflow-y: auto;
-    padding: 15px;
-}
-
-.comment {
-    margin-bottom: 10px;
-}
-
-.post-modal-actions {
-    padding: 15px;
-    border-top: 1px solid #dbdbdb;
-}
-
-.like-btn {
-    background: none;
-    border: none;
-    cursor: pointer;
-    margin-bottom: 10px;
-    display: block;
-}
-
-.comment-input-container {
-    display: flex;
-    border-top: 1px solid #dbdbdb;
-    padding-top: 10px;
-}
-
-.comment-input-container input {
-    flex-grow: 1;
-    border: none;
-    outline: none;
-    padding: 10px;
-}
-
-.comment-input-container button {
-    background: none;
-    border: none;
-    color: #0095f6;
-    font-weight: bold;
-    cursor: pointer;
-}
-
-.close-modal-btn {
-    position: absolute;
-    top: 15px;
-    right: 15px;
-    background: none;
-    border: none;
-    color: white;
-    font-size: 30px;
-    cursor: pointer;
-    z-index: 1001;
-}
-
-.nav-actions {
-    display: flex;
-    align-items: center;
-    gap: 15px;
-}
-
-.logout-btn {
-    background-color: #ff3040;
-    color: white;
-    border: none;
-    padding: 8px 16px;
-    border-radius: 4px;
-    cursor: pointer;
-    font-weight: bold;
-}
-
-.logout-btn:hover {
-    background-color: #e62e3e;
-}
-        </style>
-        
-        <div class="profile-top-nav">
-            <button class="back-btn" id="back-btn">
-                ← 
-            </button>
-            
-            <div class="search-container">
-                <i class="fas fa-search"></i>
-                <input 
-                    type="text" 
-                    id="profile-search-input" 
-                    placeholder="Kullanıcı ara..."
-                >
-                <div class="search-results" id="search-results" style="display: none;"></div>
-            </div>
-            
-            <div class="nav-actions">
-                <div class="notifications-btn">
-                    <i class="fas fa-bell"></i>
-                </div>
-                <button class="logout-btn" id="logout-btn">Çıkış Yap</button>
-            </div>
-        </div>
-
-        <div class="profile-container">
-            <div class="profile-header">
-                <img 
-                    src="${pageData.profileUser.profileImage}" 
-                    alt="${pageData.profileUser.username}" 
-                    class="profile-image"
-                >
-                <div class="profile-info">
-                    <div class="profile-username">@${
-                        pageData.profileUser.username || 'Kullanıcı adı yok'
-                    }</div>
-                    <div class="profile-fullname">${
-                        pageData.profileUser.fullName ||
-                        'Ad Soyad belirtilmemiş'
-                    }</div>
-                    <div class="profile-bio">${
-                        pageData.profileUser.bio ||
-                        'Henüz bir biyografi eklenmedi'
-                    }</div>
+                <style>
+                    :root {
+                        --primary-color: #5563de;
+                        --primary-light: #7b87e7;
+                        --primary-dark: #3a47c2;
+                        --secondary-color: #f27059;
+                        --bg-color: #f5f8fc;
+                        --card-color: #ffffff;
+                        --text-primary: #333333;
+                        --text-secondary: #666666;
+                        --border-color: #e1e4ea;
+                        --error-color: #e74c3c;
+                        --success-color: #2ecc71;
+                    }
                     
-                    <div class="profile-actions">
+                    body {
+                        background-color: var(--bg-color);
+                        font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+                        margin: 0;
+                        padding: 0;
+                    }
+                    
+                    .profile-container {
+                        max-width: 1000px;
+                        margin: 0 auto;
+                        padding: 20px;
+                    }
+                    
+                    .profile-top-nav {
+                        display: flex;
+                        align-items: center;
+                        justify-content: space-between;
+                        padding: 15px 20px;
+                        background-color: var(--card-color);
+                        border-radius: 16px;
+                        box-shadow: 0 4px 12px rgba(0,0,0,0.08);
+                        margin-bottom: 30px;
+                        position: relative;
+                    }
+                    
+                    .profile-top-nav::before {
+                        content: '';
+                        position: absolute;
+                        top: 0;
+                        left: 0;
+                        right: 0;
+                        height: 6px;
+                        background: linear-gradient(to right, var(--primary-color), var(--secondary-color));
+                        border-top-left-radius: 16px;
+                        border-top-right-radius: 16px;
+                    }
+                    
+                    .back-btn {
+                        background: none;
+                        border: none;
+                        font-size: 24px;
+                        cursor: pointer;
+                        color: var(--text-primary);
+                        padding: 8px;
+                        border-radius: 50%;
+                        transition: all 0.2s ease;
+                    }
+                    
+                    .back-btn:hover {
+                        background-color: rgba(85, 99, 222, 0.1);
+                        color: var(--primary-color);
+                    }
+                    
+                    .search-container {
+                        display: flex;
+                        align-items: center;
+                        background-color: #f1f3f8;
+                        border-radius: 10px;
+                        padding: 8px 12px;
+                        width: 250px;
+                        position: relative;
+                    }
+                    
+                    .search-container i {
+                        color: var(--text-secondary);
+                    }
+                    
+                    .search-container input {
+                        border: none;
+                        background: none;
+                        width: 100%;
+                        outline: none;
+                        margin-left: 10px;
+                        font-size: 15px;
+                        color: var(--text-primary);
+                    }
+                    
+                    .search-results {
+                        position: absolute;
+                        top: 100%;
+                        left: 0;
+                        width: 100%;
+                        background-color: var(--card-color);
+                        border: 1px solid var(--border-color);
+                        border-radius: 0 0 10px 10px;
+                        box-shadow: 0 4px 12px rgba(0,0,0,0.1);
+                        z-index: 1000;
+                        max-height: 300px;
+                        overflow-y: auto;
+                    }
+                    
+                    .search-result-item {
+                        display: flex;
+                        align-items: center;
+                        padding: 12px;
+                        cursor: pointer;
+                        border-bottom: 1px solid var(--border-color);
+                    }
+                    
+                    .search-result-item:last-child {
+                        border-bottom: none;
+                    }
+                    
+                    .search-result-item:hover {
+                        background-color: rgba(85, 99, 222, 0.05);
+                    }
+                    
+                    .search-result-item img {
+                        width: 40px;
+                        height: 40px;
+                        border-radius: 50%;
+                        margin-right: 12px;
+                        object-fit: cover;
+                    }
+                    
+                    .nav-actions {
+                        display: flex;
+                        align-items: center;
+                        gap: 15px;
+                    }
+                    
+                    .notifications-btn {
+                        font-size: 20px;
+                        color: var(--text-secondary);
+                        cursor: pointer;
+                        transition: color 0.2s ease;
+                        padding: 8px;
+                        border-radius: 50%;
+                    }
+                    
+                    .notifications-btn:hover {
+                        color: var(--primary-color);
+                        background-color: rgba(85, 99, 222, 0.1);
+                    }
+                    
+                    .logout-btn {
+                        background-color: var(--error-color);
+                        color: white;
+                        border: none;
+                        padding: 8px 16px;
+                        border-radius: 8px;
+                        cursor: pointer;
+                        font-weight: 600;
+                        transition: background-color 0.2s ease, transform 0.1s ease;
+                    }
+                    
+                    .logout-btn:hover {
+                        background-color: #c0392b;
+                        transform: translateY(-1px);
+                    }
+                    
+                    .profile-header {
+                        display: flex;
+                        align-items: center;
+                        background-color: var(--card-color);
+                        border-radius: 16px;
+                        padding: 30px;
+                        margin-bottom: 30px;
+                        box-shadow: 0 4px 12px rgba(0,0,0,0.08);
+                        position: relative;
+                    }
+                    
+                    .profile-header::before {
+                        content: '';
+                        position: absolute;
+                        top: 0;
+                        left: 0;
+                        right: 0;
+                        height: 6px;
+                        background: linear-gradient(to right, var(--primary-color), var(--secondary-color));
+                        border-top-left-radius: 16px;
+                        border-top-right-radius: 16px;
+                    }
+                    
+                    .profile-image {
+                        width: 150px;
+                        height: 150px;
+                        border-radius: 50%;
+                        object-fit: cover;
+                        margin-right: 30px;
+                        border: 3px solid var(--primary-light);
+                        padding: 3px;
+                    }
+                    
+                    .profile-info {
+                        flex-grow: 1;
+                    }
+                    
+                    .profile-username {
+                        font-size: 24px;
+                        color: var(--text-primary);
+                        margin-bottom: 10px;
+                        display: flex;
+                        align-items: center;
+                    }
+                    
+                    .privacy-badge {
+                        margin-left: 10px;
+                        font-size: 16px;
+                    }
+                    
+                    .profile-fullname {
+                        font-size: 18px;
+                        color: var (--text-secondary);
+                        margin-bottom: 15px;
+                    }
+                    
+                    .profile-bio {
+                        margin-top: 10px;
+                        color: var(--text-primary);
+                        margin-bottom: 20px;
+                    }
+                    
+                    .profile-stats {
+                        display: flex;
+                        gap: 30px;
+                        margin-bottom: 20px;
+                    }
+                    
+                    .stat-item {
+                        display: flex;
+                        flex-direction: column;
+                        align-items: center;
+                    }
+                    
+                    .stat-value {
+                        font-size: 18px;
+                        font-weight: 600;
+                        color: var(--text-primary);
+                    }
+                    
+                    .stat-label {
+                        font-size: 14px;
+                        color: var(--text-secondary);
+                    }
+                    
+                    .profile-actions {
+                        margin-top: 20px;
+                        display: flex;
+                        align-items: center;
+                        gap: 15px;
+                    }
+                    
+                    .edit-profile-btn {
+                        background-color: var(--primary-color);
+                        color: white;
+                        border: none;
+                        padding: 10px 20px;
+                        border-radius: 8px;
+                        cursor: pointer;
+                        font-weight: 600;
+                        transition: background-color 0.2s ease, transform 0.1s ease;
+                    }
+                    
+                    .edit-profile-btn:hover {
+                        background-color: var(--primary-dark);
+                        transform: translateY(-1px);
+                    }
+                    
+                    .follow-btn {
+                        background-color: var(--primary-color);
+                        color: white;
+                        border: none;
+                        padding: 10px 20px;
+                        border-radius: 8px;
+                        cursor: pointer;
+                        font-weight: 600;
+                        transition: all 0.2s ease;
+                    }
+                    
+                    .follow-btn.following {
+                        background-color: var(--error-color);
+                    }
+                    
+                    .follow-btn.pending {
+                        background-color: var(--text-secondary);
+                        cursor: default;
+                    }
+                    
+                    .settings-btn {
+                        background: none;
+                        border: none;
+                        font-size: 20px;
+                        color: var(--text-secondary);
+                        cursor: pointer;
+                        padding: 8px;
+                        border-radius: 50%;
+                        transition: all 0.2s ease;
+                        margin-left: auto;
+                    }
+                    
+                    .settings-btn:hover {
+                        color: var(--primary-color);
+                        background-color: rgba(85, 99, 222, 0.1);
+                    }
+                    
+                    .posts-grid {
+                        display: grid;
+                        grid-template-columns: repeat(3, 1fr);
+                        gap: 15px;
+                        margin-top: 20px;
+                    }
+                    
+                    .post-item {
+                        position: relative;
+                        aspect-ratio: 1;
+                        overflow: hidden;
+                        border-radius: 12px;
+                        cursor: pointer;
+                        box-shadow: 0 4px 8px rgba(0,0,0,0.08);
+                        transition: transform 0.2s ease;
+                    }
+                    
+                    .post-item:hover {
+                        transform: translateY(-3px);
+                    }
+                    
+                    .post-item img {
+                        width: 100%;
+                        height: 100%;
+                        object-fit: cover;
+                    }
+                    
+                    .add-post-btn {
+                        display: inline-block;
+                        background-color: var(--primary-color);
+                        color: white;
+                        padding: 12px 20px;
+                        border-radius: 8px;
+                        font-weight: 600;
+                        font-size: 15px;
+                        margin-bottom: 20px;
+                        cursor: pointer;
+                        transition: background-color 0.2s ease;
+                        border: none;
+                    }
+                    
+                    .add-post-btn:hover {
+                        background-color: var(--primary-dark);
+                    }
+                    
+                    .no-posts {
+                        text-align: center;
+                        color: var(--text-secondary);
+                        padding: 40px 0;
+                        font-style: italic;
+                        background-color: var(--card-color);
+                        border-radius: 16px;
+                        box-shadow: 0 4px 12px rgba(0,0,0,0.08);
+                    }
+                    
+                    .private-account-message {
+                        text-align: center;
+                        padding: 50px 20px;
+                        background-color: var(--card-color);
+                        border-radius: 16px;
+                        box-shadow: 0 4px 12px rgba(0,0,0,0.08);
+                    }
+                    
+                    .private-account-message p:first-child {
+                        font-size: 24px;
+                        margin-bottom: 10px;
+                    }
+                    
+                    .private-account-message p:last-child {
+                        color: var(--text-secondary);
+                    }
+                    
+                    /* Modal Styles */
+                    .modal {
+                        position: fixed;
+                        top: 0;
+                        left: 0;
+                        width: 100%;
+                        height: 100%;
+                        display: flex;
+                        justify-content: center;
+                        align-items: center;
+                        background-color: rgba(0, 0, 0, 0.5);
+                        z-index: 1000;
+                    }
+                    
+                    .modal-content {
+                        background-color: var(--card-color);
+                        border-radius: 16px;
+                        padding: 30px;
+                        width: 90%;
+                        max-width: 500px;
+                        box-shadow: 0 8px 24px rgba(0, 0, 0, 0.15);
+                        position: relative;
+                    }
+                    
+                    .modal-content h2 {
+                        color: var(--primary-color);
+                        margin-top: 0;
+                        margin-bottom: 20px;
+                    }
+                    
+                    .privacy-setting {
+                        margin: 20px 0;
+                    }
+                    
+                    .privacy-setting label {
+                        display: flex;
+                        align-items: center;
+                        font-weight: 600;
+                        color: var(--text-primary);
+                        cursor: pointer;
+                    }
+                    
+                    .privacy-setting input[type="checkbox"] {
+                        margin-right: 10px;
+                        width: 18px;
+                        height: 18px;
+                        accent-color: var(--primary-color);
+                    }
+                    
+                    .setting-info {
+                        color: var(--text-secondary);
+                        margin-top: 8px;
+                        font-size: 14px;
+                    }
+                    
+                    .modal-content button {
+                        padding: 10px 20px;
+                        border-radius: 8px;
+                        font-weight: 600;
+                        cursor: pointer;
+                        border: none;
+                        margin-right: 10px;
+                    }
+                    
+                    #save-settings {
+                        background-color: var(--primary-color);
+                        color: white;
+                    }
+                    
+                    #save-settings:hover {
+                        background-color: var(--primary-dark);
+                    }
+                    
+                    #close-settings {
+                        background-color: #f1f1f1;
+                        color: var(--text-primary);
+                    }
+                    
+                    /* Post Modal Styles */
+                    .post-modal {
+                        position: fixed;
+                        top: 0;
+                        left: 0;
+                        width: 100%;
+                        height: 100%;
+                        background-color: rgba(0, 0, 0, 0.8);
+                        display: flex;
+                        justify-content: center;
+                        align-items: center;
+                        z-index: 1000;
+                    }
+                    
+                    .post-modal-content {
+                        display: flex;
+                        width: 90%;
+                        max-width: 1000px;
+                        height: 80%;
+                        background-color: var(--card-color);
+                        border-radius: 16px;
+                        overflow: hidden;
+                    }
+                    
+                    .post-modal-image {
+                        flex: 3;
+                        background-color: #000;
+                        display: flex;
+                        justify-content: center;
+                        align-items: center;
+                    }
+                    
+                    .post-modal-image img {
+                        max-width: 100%;
+                        max-height: 100%;
+                        object-fit: contain;
+                    }
+                    
+                    .post-modal-details {
+                        flex: 2;
+                        display: flex;
+                        flex-direction: column;
+                        border-left: 1px solid var(--border-color);
+                    }
+                    
+                    .post-modal-header {
+                        display: flex;
+                        align-items: center;
+                        padding: 15px;
+                        border-bottom: 1px solid var(--border-color);
+                    }
+                    
+                    .post-user-avatar {
+                        width: 40px;
+                        height: 40px;
+                        border-radius: 50%;
+                        margin-right: 10px;
+                        object-fit: cover;
+                        border: 2px solid var(--primary-light);
+                    }
+                    
+                    .post-username {
+                        font-weight: bold;
+                        color: var(--text-primary);
+                    }
+                    
+                    .post-modal-caption {
+                        padding: 15px;
+                        border-bottom: 1px solid var(--border-color);
+                        color: var(--text-primary);
+                    }
+                    
+                    .post-modal-comments {
+                        flex-grow: 1;
+                        overflow-y: auto;
+                        padding: 15px;
+                    }
+                    
+                    .comment {
+                        margin-bottom: 12px;
+                        color: var(--text-primary);
+                    }
+                    
+                    .comment strong {
+                        margin-right: 5px;
+                    }
+                    
+                    .post-modal-actions {
+                        padding: 15px;
+                        border-top: 1px solid var(--border-color);
+                    }
+                    
+                    .like-btn {
+                        background: none;
+                        border: none;
+                        cursor: pointer;
+                        margin-bottom: 10px;
+                        display: block;
+                        color: var(--text-primary);
+                        font-size: 16px;
+                        transition: color 0.2s ease;
+                        padding: 0;
+                    }
+                    
+                    .like-btn:hover {
+                        color: var(--secondary-color);
+                    }
+                    
+                    .comment-input-container {
+                        display: flex;
+                        margin-top: 15px;
+                    }
+                    
+                    .comment-input-container input {
+                        flex-grow: 1;
+                        border: 1px solid var(--border-color);
+                        outline: none;
+                        padding: 10px 15px;
+                        border-radius: 8px;
+                        font-size: 14px;
+                        color: var(--text-primary);
+                    }
+                    
+                    .comment-input-container button {
+                        background: none;
+                        border: none;
+                        color: var(--primary-color);
+                        font-weight: bold;
+                        cursor: pointer;
+                        padding: 0 10px;
+                    }
+                    
+                    .close-modal-btn {
+                        position: absolute;
+                        top: 15px;
+                        right: 15px;
+                        background: none;
+                        border: none;
+                        color: white;
+                        font-size: 30px;
+                        cursor: pointer;
+                        z-index: 1001;
+                    }
+                    
+                    @media (max-width: 768px) {
+                        .post-modal-content {
+                            flex-direction: column;
+                            height: 90%;
+                        }
+                        
+                        .post-modal-image {
+                            flex: 1;
+                        }
+                        
+                        .posts-grid {
+                            grid-template-columns: repeat(2, 1fr);
+                        }
+                        
+                        .profile-image {
+                            width: 100px;
+                            height: 100px;
+                        }
+                    }
+                    
+                    @media (max-width: 480px) {
+                        .posts-grid {
+                            grid-template-columns: 1fr;
+                        }
+                        
+                        .profile-header {
+                            flex-direction: column;
+                            text-align: center;
+                        }
+                        
+                        .profile-image {
+                            margin-right: 0;
+                            margin-bottom: 20px;
+                        }
+                    }
+                </style>
+                
+                <div class="profile-top-nav">
+                    <button class="back-btn" id="back-btn">
+                        ← 
+                    </button>
+                    
+                    <div class="search-container">
+                        <i class="fas fa-search"></i>
+                        <input 
+                            type="text" 
+                            id="profile-search-input" 
+                            placeholder="Kullanıcı ara..."
+                        >
+                        <div class="search-results" id="search-results" style="display: none;"></div>
+                    </div>
+                    
+                    <div class="nav-actions">
+                        <div class="notifications-btn">
+                            <i class="fas fa-bell"></i>
+                        </div>
+                        <button class="logout-btn" id="logout-btn">Çıkış Yap</button>
+                    </div>
+                </div>
+
+                <div class="profile-container">
+                    <div class="profile-header">
+                        <img 
+                            src="${pageData.profileUser.profileImage}" 
+                            alt="${pageData.profileUser.username}" 
+                            class="profile-image"
+                        >
+                        <div class="profile-info">
+                            <div class="profile-username">@${
+                                pageData.profileUser.username ||
+                                'Kullanıcı adı yok'
+                            }
+                                <span class="privacy-badge">${
+                                    pageData.isPrivate ? '🔒' : '🌐'
+                                }</span>
+                            </div>
+                            
+                            <div class="profile-fullname">${
+                                pageData.profileUser.fullName ||
+                                'Ad Soyad belirtilmemiş'
+                            }</div>
+                            
+                            <div class="profile-bio">${
+                                pageData.profileUser.bio ||
+                                'Henüz bir biyografi eklenmedi'
+                            }</div>
+                            
+                            <div class="profile-stats">
+                                <div class="stat-item">
+                                    <div class="stat-value">${
+                                        pageData.userPosts.length || 0
+                                    }</div>
+                                    <div class="stat-label">Gönderi</div>
+                                </div>
+                                
+                                <div class="stat-item">
+                                    <div class="stat-value">${
+                                        pageData.followersCount || 0
+                                    }</div>
+                                    <div class="stat-label">Takipçi</div>
+                                </div>
+                            </div>
+                            
+                            <div class="profile-actions">
+                                ${
+                                    pageData.isOwnProfile
+                                        ? `
+                                    <button class="edit-profile-btn" id="edit-profile-btn">
+                                        Profili Düzenle
+                                    </button>
+                                `
+                                        : `
+                                    <button class="follow-btn ${
+                                        pageData.followStatus.isFollowing
+                                            ? 'following'
+                                            : pageData.followStatus.isPending
+                                            ? 'pending'
+                                            : ''
+                                    }" id="follow-btn">
+                                        ${pageData.followBtnText}
+                                    </button>
+                                `
+                                }
+                            </div>
+                        </div>
+                        
+                        ${
+                            pageData.isOwnProfile
+                                ? `<button id="settings-btn" class="settings-btn">
+                            ⚙️
+                        </button>`
+                                : ''
+                        }
+                    </div>
+
+                    <!-- Ayarlar Modal -->
+                    <div id="settings-modal" class="modal" style="display: none;">
+                        <div class="modal-content">
+                            <h2>Hesap Ayarları</h2>
+                            <div class="privacy-setting">
+                                <label>
+                                    <input type="checkbox" id="private-account" ${
+                                        pageData.isPrivate ? 'checked' : ''
+                                    }>
+                                    Gizli Hesap
+                                </label>
+                                <p class="setting-info">
+                                    Gizli hesap olduğunda, sadece onayladığınız takipçiler gönderilerinizi görebilir.
+                                </p>
+                            </div>
+                            <button id="save-settings">Kaydet</button>
+                            <button id="close-settings">Kapat</button>
+                        </div>
+                    </div>
+                    
+                    <div class="profile-posts">
                         ${
                             pageData.isOwnProfile
                                 ? `
-                            <button class="edit-profile-btn" id="edit-profile-btn">
-                                Profili Düzenle
+                            <button class="add-post-btn" id="add-post-btn">
+                                <i class="fas fa-plus"></i> Gönderi Ekle
                             </button>
+                            <input type="file" id="post-file-input" accept="image/*" style="display:none;">
                         `
-                                : `
-                            <button class="follow-btn" id="follow-btn" style="background-color: ${pageData.followBtnColor}">
-                                ${pageData.followBtnText}
-                            </button>
-                        `
+                                : ''
                         }
-                    </div>
-                    
-                    ${
-                        !pageData.isOwnProfile
-                            ? `
-                        <div class="followers-count">
-                            ${pageData.followersCount} takipçi
+                        
+                        <div class="posts-grid" id="posts-grid">
+                            ${postsGridHTML}
                         </div>
-                    `
-                            : ''
-                    }
-                </div>
-                ${
-                    pageData.isOwnProfile
-                        ? `<button id="settings-btn" class="settings-btn">
-                        ⚙️ Ayarlar
-                    </button>`
-                        : ''
-                }
-                <span class="privacy-badge">${
-                    pageData.isPrivate ? '🔒' : '🌐'
-                }</span>
-            </div>
-
-            <!-- Ayarlar Modal -->
-            <div id="settings-modal" class="modal" style="display: none;">
-                <div class="modal-content">
-                    <h2>Hesap Ayarları</h2>
-                    <div class="privacy-setting">
-                        <label>
-                            <input type="checkbox" id="private-account" ${
-                                pageData.isPrivate ? 'checked' : ''
-                            }>
-                            Gizli Hesap
-                        </label>
-                        <p class="setting-info">
-                            Gizli hesap olduğunda, sadece onayladığınız takipçiler gönderilerinizi görebilir.
-                        </p>
                     </div>
-                    <button id="save-settings">Kaydet</button>
-                    <button id="close-settings">Kapat</button>
                 </div>
-            </div>
-            
-            <div class="profile-posts">
-                ${
-                    pageData.isOwnProfile
-                        ? `
-                    <button class="add-post-btn" id="add-post-btn">
-                        Gönderi Ekle
-                    </button>
-                    <input type="file" id="post-file-input" accept="image/*">
-                `
-                        : ''
-                }
-                
-                <div class="posts-grid" id="posts-grid">
-                    ${postsGridHTML}
-                </div>
-            </div>
-        </div>
-    `;
+            `;
 
             // Event listener'ları ayarla
             this.setupEventListeners(pageData);
@@ -549,18 +895,37 @@ class ProfilePage {
             console.error('Profil yükleme hatası:', error);
             if (appContainer) {
                 appContainer.innerHTML = `
-                <div style="text-align: center; padding: 20px;">
-                    <h2>Profil Yüklenemedi</h2>
-                    <p>${error.message}</p>
-                    <button onclick="window.location.href='/home'" 
-                            style="padding: 10px; margin-top: 10px; 
-                            background-color: #0095f6; color: white; 
-                            border: none; border-radius: 4px; 
-                            cursor: pointer;">
+                <div class="error-container" style="
+                    text-align: center;
+                    padding: 40px 20px;
+                    background-color: var(--card-color);
+                    border-radius: 16px;
+                    box-shadow: 0 8px 24px rgba(0, 0, 0, 0.1);
+                    margin: 50px auto;
+                    max-width: 500px;
+                ">
+                    <h2 style="color: var(--error-color);">Profil Yüklenemedi</h2>
+                    <p style="color: var(--text-secondary);">${error.message}</p>
+                    <button id="back-to-home" style="
+                        padding: 12px 20px;
+                        background-color: var(--primary-color);
+                        color: white;
+                        border: none;
+                        border-radius: 8px;
+                        font-weight: 600;
+                        margin-top: 20px;
+                        cursor: pointer;
+                    ">
                         Ana Sayfaya Dön
                     </button>
                 </div>
-            `;
+                `;
+
+                document
+                    .getElementById('back-to-home')
+                    .addEventListener('click', () => {
+                        window.location.href = '/home';
+                    });
             }
         }
     }

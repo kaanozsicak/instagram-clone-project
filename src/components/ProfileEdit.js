@@ -9,6 +9,93 @@ export class ProfileEdit {
         const profile = currentUser.profile || {};
 
         appContainer.innerHTML = `
+            <link rel="stylesheet" href="/styles/theme.css">
+            <style>
+                .profile-edit-container {
+                    display: flex;
+                    justify-content: center;
+                    padding: 40px 20px;
+                    background-color: var(--bg-color);
+                    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+                }
+                
+                .profile-edit-form {
+                    background-color: var(--card-color);
+                    border-radius: 16px;
+                    box-shadow: 0 8px 24px rgba(0, 0, 0, 0.1);
+                    width: 100%;
+                    max-width: 520px;
+                    padding: 40px;
+                    position: relative;
+                }
+                
+                .profile-edit-form::before {
+                    content: '';
+                    position: absolute;
+                    top: 0;
+                    left: 0;
+                    right: 0;
+                    height: 6px;
+                    background: linear-gradient(to right, var(--primary-color), var(--secondary-color));
+                }
+                
+                h2 {
+                    font-size: 28px;
+                    color: var(--primary-color);
+                    margin-bottom: 30px;
+                    text-align: center;
+                }
+                
+                .profile-picture-upload {
+                    margin-bottom: 30px;
+                    text-align: center;
+                }
+                
+                #profile-picture-preview {
+                    width: 120px;
+                    height: 120px;
+                    border-radius: 50%;
+                    object-fit: cover;
+                    margin-bottom: 15px;
+                    border: 3px solid var(--primary-light);
+                }
+                
+                .upload-btn {
+                    background-color: var(--primary-color);
+                    color: white;
+                    border: none;
+                    padding: 10px 15px;
+                    border-radius: 8px;
+                    cursor: pointer;
+                    font-weight: 500;
+                }
+                
+                .username-container {
+                    position: relative;
+                    margin-bottom: 20px;
+                }
+                
+                #username-availability-status {
+                    position: absolute;
+                    top: 100%;
+                    left: 0;
+                    font-size: 12px;
+                    margin-top: 5px;
+                }
+                
+                .submit-btn {
+                    width: 100%;
+                    padding: 14px;
+                    background-color: var(--primary-color);
+                    color: white;
+                    border: none;
+                    border-radius: 8px;
+                    font-size: 16px;
+                    font-weight: 600;
+                    cursor: pointer;
+                    margin-top: 20px;
+                }
+            </style>
             <div class="profile-edit-container">
                 <div class="profile-edit-form">
                     <h2>Profili Düzenle</h2>
@@ -22,7 +109,10 @@ export class ProfileEdit {
                             >
                             <img 
                                 id="profile-picture-preview" 
-                                src="${profile.profilePicture || 'https://via.placeholder.com/150'}" 
+                                src="${
+                                    profile.profilePicture ||
+                                    'https://via.placeholder.com/150'
+                                }" 
                                 alt="Profil Resmi"
                             >
                             <button 
@@ -34,39 +124,62 @@ export class ProfileEdit {
                             </button>
                         </div>
 
-                        <input 
-                            type="text" 
-                            id="full-name" 
-                            placeholder="Ad Soyad" 
-                            value="${profile.fullName || ''}"
-                            required
-                        >
-                        <div class="username-container">
+                        <div class="form-group">
+                            <label for="full-name">Ad Soyad</label>
                             <input 
                                 type="text" 
-                                id="username" 
-                                placeholder="Kullanıcı Adı" 
-                                value="${profile.username || ''}"
+                                id="full-name" 
+                                class="form-control"
+                                placeholder="Ad Soyad" 
+                                value="${profile.fullName || ''}"
                                 required
                             >
+                        </div>
+                        
+                        <div class="username-container">
+                            <div class="form-group">
+                                <label for="username">Kullanıcı Adı</label>
+                                <input 
+                                    type="text" 
+                                    id="username" 
+                                    class="form-control"
+                                    placeholder="Kullanıcı Adı" 
+                                    value="${profile.username || ''}"
+                                    required
+                                >
+                            </div>
                             <span id="username-availability-status"></span>
                         </div>
-                        <textarea 
-                            id="bio" 
-                            placeholder="Biyografi (İsteğe bağlı)"
-                        >${profile.bio || ''}</textarea>
                         
-                        <div class="gender-select">
-                            <label>Cinsiyet:</label>
-                            <select id="gender">
+                        <div class="form-group">
+                            <label for="bio">Biyografi</label>
+                            <textarea 
+                                id="bio"
+                                class="form-control" 
+                                placeholder="Biyografi (İsteğe bağlı)"
+                                rows="3"
+                            >${profile.bio || ''}</textarea>
+                        </div>
+                        
+                        <div class="form-group">
+                            <label for="gender">Cinsiyet</label>
+                            <select id="gender" class="form-control">
                                 <option value="">Seçiniz</option>
-                                <option value="male" ${profile.gender === 'male' ? 'selected' : ''}>Erkek</option>
-                                <option value="female" ${profile.gender === 'female' ? 'selected' : ''}>Kadın</option>
-                                <option value="other" ${profile.gender === 'other' ? 'selected' : ''}>Diğer</option>
+                                <option value="male" ${
+                                    profile.gender === 'male' ? 'selected' : ''
+                                }>Erkek</option>
+                                <option value="female" ${
+                                    profile.gender === 'female'
+                                        ? 'selected'
+                                        : ''
+                                }>Kadın</option>
+                                <option value="other" ${
+                                    profile.gender === 'other' ? 'selected' : ''
+                                }>Diğer</option>
                             </select>
                         </div>
 
-                        <button type="submit" class="submit-btn">Profili Güncelle</button>
+                        <button type="submit" class="btn btn-primary submit-btn">Profili Güncelle</button>
                     </form>
                 </div>
             </div>
@@ -78,11 +191,15 @@ export class ProfileEdit {
     static setupEventListeners(currentUser) {
         const form = document.getElementById('profile-edit-form');
         const profilePictureInput = document.getElementById('profile-picture');
-        const profilePicturePreview = document.getElementById('profile-picture-preview');
+        const profilePicturePreview = document.getElementById(
+            'profile-picture-preview'
+        );
         const uploadPictureBtn = document.getElementById('upload-picture-btn');
         const usernameInput = document.getElementById('username');
-        const usernameAvailabilityStatus = document.getElementById('username-availability-status');
-        
+        const usernameAvailabilityStatus = document.getElementById(
+            'username-availability-status'
+        );
+
         let selectedProfilePicture = null;
         let isUsernameAvailable = true;
 
@@ -108,10 +225,11 @@ export class ProfileEdit {
         let usernameCheckTimeout;
         usernameInput.addEventListener('input', async (e) => {
             const username = e.target.value.toLowerCase().trim();
-            
+
             // Mevcut kullanıcı adını kontrol et
             if (username === currentUser.profile.username) {
-                usernameAvailabilityStatus.textContent = '✓ Mevcut kullanıcı adı';
+                usernameAvailabilityStatus.textContent =
+                    '✓ Mevcut kullanıcı adı';
                 usernameAvailabilityStatus.style.color = 'green';
                 isUsernameAvailable = true;
                 return;
@@ -120,7 +238,8 @@ export class ProfileEdit {
             // Boşluk ve özel karakter kontrolü
             const usernameRegex = /^[a-z0-9_]+$/;
             if (!usernameRegex.test(username)) {
-                usernameAvailabilityStatus.textContent = 'Kullanıcı adı sadece küçük harf, rakam ve alt çizgi içerebilir';
+                usernameAvailabilityStatus.textContent =
+                    'Kullanıcı adı sadece küçük harf, rakam ve alt çizgi içerebilir';
                 usernameAvailabilityStatus.style.color = 'red';
                 isUsernameAvailable = false;
                 return;
@@ -128,27 +247,32 @@ export class ProfileEdit {
 
             // Zaman aşımı ile gereksiz çağrıları önle
             clearTimeout(usernameCheckTimeout);
-            
+
             usernameCheckTimeout = setTimeout(async () => {
                 if (username.length < 3) {
-                    usernameAvailabilityStatus.textContent = 'Kullanıcı adı en az 3 karakter olmalı';
+                    usernameAvailabilityStatus.textContent =
+                        'Kullanıcı adı en az 3 karakter olmalı';
                     usernameAvailabilityStatus.style.color = 'red';
                     isUsernameAvailable = false;
                     return;
                 }
 
                 try {
-                    usernameAvailabilityStatus.textContent = 'Kontrol ediliyor...';
+                    usernameAvailabilityStatus.textContent =
+                        'Kontrol ediliyor...';
                     usernameAvailabilityStatus.style.color = 'blue';
 
-                    const available = await AuthService.checkUsernameAvailability(username);
-                    
+                    const available =
+                        await AuthService.checkUsernameAvailability(username);
+
                     if (available) {
-                        usernameAvailabilityStatus.textContent = '✓ Kullanıcı adı uygun';
+                        usernameAvailabilityStatus.textContent =
+                            '✓ Kullanıcı adı uygun';
                         usernameAvailabilityStatus.style.color = 'green';
                         isUsernameAvailable = true;
                     } else {
-                        usernameAvailabilityStatus.textContent = '✗ Kullanıcı adı zaten alınmış';
+                        usernameAvailabilityStatus.textContent =
+                            '✗ Kullanıcı adı zaten alınmış';
                         usernameAvailabilityStatus.style.color = 'red';
                         isUsernameAvailable = false;
                     }
@@ -191,7 +315,7 @@ export class ProfileEdit {
                 let profilePictureUrl = currentUser.profile.profilePicture;
                 if (selectedProfilePicture) {
                     profilePictureUrl = await StorageService.uploadProfileImage(
-                        selectedProfilePicture, 
+                        selectedProfilePicture,
                         currentUserAuth.uid
                     );
                 }
@@ -203,14 +327,16 @@ export class ProfileEdit {
                     bio,
                     gender,
                     profilePicture: profilePictureUrl,
-                    isProfileComplete: true
+                    isProfileComplete: true,
                 });
 
                 alert('Profil başarıyla güncellendi!');
                 window.location.reload();
             } catch (error) {
                 console.error('Profil güncelleme hatası:', error);
-                alert('Profil güncellenirken bir hata oluştu: ' + error.message);
+                alert(
+                    'Profil güncellenirken bir hata oluştu: ' + error.message
+                );
             }
         });
     }
