@@ -4,7 +4,7 @@ class LoginPage {
     static render() {
         console.log('Login sayfası render ediliyor');
         const appContainer = document.getElementById('app');
-        
+
         if (!appContainer) {
             console.error('App container bulunamadı');
             return;
@@ -97,11 +97,12 @@ class LoginPage {
 
     static setupEventListeners() {
         const loginForm = document.getElementById('login-form');
-        loginForm.addEventListener('submit', this.handleLogin.bind(this));
+        loginForm.addEventListener('submit', this.handleLogin);
     }
 
     static async handleLogin(e) {
         e.preventDefault();
+        console.log('Giriş işlemi başlatılıyor');
 
         const emailInput = document.getElementById('email');
         const passwordInput = document.getElementById('password');
@@ -110,17 +111,35 @@ class LoginPage {
         const password = passwordInput.value;
 
         try {
-            const user = await AuthService.login(email, password);
-            
-            if (user) {
-                // Kullanıcı profili tamamlanmışsa ana sayfaya yönlendir
-                window.location.href = '/home';
+            // Önce login butonunu devre dışı bırak
+            const submitButton = document.querySelector(
+                '#login-form button[type="submit"]'
+            );
+            if (submitButton) {
+                submitButton.disabled = true;
+                submitButton.textContent = 'Giriş yapılıyor...';
             }
-            // Eğer user null ise (profil tamamlanmamışsa) zaten login metodu yönlendirme yapacak
 
+            // Login işlemini gerçekleştir
+            const userCredential = await AuthService.login(email, password);
+            console.log('Giriş başarılı:', userCredential);
+
+            // Home sayfasına yönlendir
+            setTimeout(() => {
+                window.location.replace('/home');
+            }, 500);
         } catch (error) {
             console.error('Giriş hatası:', error);
-            alert(error.message || 'Giriş sırasında bir hata oluştu');
+            alert(error.message || 'Giriş yapılırken bir hata oluştu');
+
+            // Butonu tekrar aktif et
+            const submitButton = document.querySelector(
+                '#login-form button[type="submit"]'
+            );
+            if (submitButton) {
+                submitButton.disabled = false;
+                submitButton.textContent = 'Giriş Yap';
+            }
         }
     }
 }

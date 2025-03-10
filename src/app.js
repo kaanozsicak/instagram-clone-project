@@ -7,6 +7,9 @@ import { AuthService } from './services/auth-service.js';
 
 class App {
     constructor() {
+        this.isAuthInitialized = false;
+        this.currentUser = null;
+
         this.routes = {
             '/': HomePage,
             '/home': HomePage,
@@ -14,117 +17,147 @@ class App {
             '/signup': SignupPage,
             '/complete-profile': CompleteProfilePage,
             '/profile': ProfilePage,
-            '/profile/:username': ProfilePage,
         };
 
         this.init();
     }
 
-    init() {
-        // Auth state değişikliğini dinle
-        AuthService.onAuthStateChange(this.handleAuthStateChange.bind(this));
+    async init() {
+        console.log('App başlatılıyor');
 
-        // Sayfa yönlendirmelerini ayarla
-        window.addEventListener('popstate', this.handleRouting.bind(this));
-
-        // İlk sayfa yüklemesi
-        this.handleRouting();
-    }
-
-    handleAuthStateChange(user) {
-        console.log('Auth state değişikliği:', user);
-
-        if (user) {
-            // Kullanıcı bilgilerini yenile
-            this.checkUserProfile(user);
-        } else {
-            // Kullanıcı çıkış yaptıysa login sayfasına yönlendir
-            if (window.location.pathname !== '/signup') {
-                this.navigateTo('/login');
-            }
-        }
-    }
-
-    async checkUserProfile(user) {
         try {
-            const userProfile = await AuthService.getUserProfile(user.uid);
+            // Auth durumunu dinle ve authInitialized'ı güncelle
+            this.authUnsubscribe = AuthService.onAuthStateChange((user) => {
+                console.log(
+                    'Auth değişikliği algılandı:',
+                    user ? 'Oturum açık' : 'Oturum kapalı'
+                );
+                this.currentUser = user;
 
-            console.log('Kullanıcı profil durumu:', userProfile);
+                // İlk kez auth başlatıldığında routing yapalım
+                if (!this.isAuthInitialized) {
+                    this.isAuthInitialized = true;
+                    this.handleInitialRouting();
+                } else if (user) {
+                    // Kullanıcı giriş yaptığında profil kontrolü yap
+                    this.checkUserProfileAndRedirect(user);
+                }
+            });
 
-            // Profil tamamlanmamışsa complete-profile sayfasına yönlendir
-            if (!userProfile.isProfileComplete) {
-                this.navigateTo('/complete-profile');
-            }
+            // Popstate event'ini handle et (geri butonu vs)
+            window.addEventListener('popstate', () => {
+                this.handleRouting();
+            });
         } catch (error) {
-            console.error('Profil kontrol hatası:', error);
+            console.error('App initialization error:', error);
         }
     }
 
-    handleRouting() {
+    async handleInitialRouting() {
         const path = window.location.pathname;
-        console.log('Mevcut path:', path);
+        console.log('İlk routing başlatılıyor:', path);
 
-        // Profil sayfası için özel routing
-        const profileMatch = path.match(/^\/profile\/(.+)$/);
-        if (profileMatch) {
-            const username = profileMatch[1];
-            this.renderPage('/profile/:username', username);
+        // Login veya signup sayfalarından birine bakıyorsak ve kullanıcı login olduysa
+        if (this.currentUser && (path === '/login' || path === '/signup')) {
+            console.log('Kullanıcı oturumu açık, ana sayfaya yönlendiriliyor');
+            window.location.href = '/home';
             return;
         }
 
-        // Normal routing
-        this.renderPage(path);
+        // Protected route'larda kullanıcı login değilse
+        if (!this.currentUser && path !== '/login' && path !== '/signup') {
+            console.log('Oturum kapalı, login sayfasına yönlendiriliyor');
+            window.location.href = '/login';
+            return;
+        }
+
+        // Normal routing yap
+        await this.handleRouting();
     }
 
-    async renderPage() {
-        const path = window.location.pathname;
-
+    async checkUserProfileAndRedirect(user) {
         try {
-            if (path === '/') {
-                window.location.href = '/home';
+            const userProfile = await AuthService.getUserProfile(user.uid);
+            const path = window.location.pathname;
+
+            // Profil tamamlanmamışsa ve complete-profile'da değilsek
+            if (
+                !userProfile?.isProfileComplete &&
+                path !== '/complete-profile'
+            ) {
+                console.log('Profil tamamlanmamış, yönlendiriliyor');
+                window.location.href = '/complete-profile';
                 return;
             }
-
-            if (path === '/login') {
-                await LoginPage.render();
-            } else if (path === '/signup') {
-                await SignupPage.render();
-            } else if (path === '/home') {
-                await HomePage.render();
-            } else if (path.startsWith('/profile')) {
-                const username = path.split('/profile/')[1];
-                // Eğer /profile'a doğrudan erişilirse, mevcut kullanıcının profiline yönlendir
-                if (!username || username === '') {
-                    const currentUser = await AuthService.getCurrentUser();
-                    if (currentUser) {
-                        const userProfile = await AuthService.getUserProfile(
-                            currentUser.uid
-                        );
-                        if (userProfile && userProfile.username) {
-                            window.location.href = `/profile/${userProfile.username}`;
-                            return;
-                        }
-                    }
-                }
-                await ProfilePage.render(username);
-            } else {
-                console.error('Sayfa bulunamadı');
-            }
         } catch (error) {
-            console.error('Sayfa render hatası:', error);
+            console.error('Profil kontrolü hatası:', error);
         }
     }
 
-    navigateTo(path, state = {}) {
-        window.history.pushState(state, '', path);
+    async handleRouting() {
+        const path = window.location.pathname;
+        console.log('Routing işlemi başladı:', path);
+
+        try {
+            // Profil sayfası kontrolü
+            if (path.startsWith('/profile/')) {
+                const username = path.split('/profile/')[1];
+                if (username) {
+                    await ProfilePage.render(username);
+                    return;
+                }
+            }
+
+            // Standart route işlemi
+            switch (path) {
+                case '/login':
+                    if (this.currentUser) {
+                        window.location.href = '/home';
+                    } else {
+                        await LoginPage.render();
+                    }
+                    break;
+
+                case '/signup':
+                    if (this.currentUser) {
+                        window.location.href = '/home';
+                    } else {
+                        await SignupPage.render();
+                    }
+                    break;
+
+                case '/complete-profile':
+                    if (!this.currentUser) {
+                        window.location.href = '/login';
+                    } else {
+                        await CompleteProfilePage.render();
+                    }
+                    break;
+
+                case '/':
+                case '/home':
+                    if (!this.currentUser) {
+                        window.location.href = '/login';
+                    } else {
+                        await HomePage.render();
+                    }
+                    break;
+
+                default:
+                    window.location.href = '/home';
+                    break;
+            }
+        } catch (error) {
+            console.error('Routing hatası:', error);
+        }
+    }
+
+    navigateTo(path) {
+        window.history.pushState(null, '', path);
         this.handleRouting();
     }
 }
 
-// Uygulamayı başlat
-document.addEventListener('DOMContentLoaded', () => {
-    console.log('Uygulama başlatılıyor');
-    new App();
-});
-
-export default App;
+// Tek bir App instance oluştur
+window.app = new App();
+export default window.app;

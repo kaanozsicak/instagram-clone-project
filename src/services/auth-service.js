@@ -171,39 +171,30 @@ export class AuthService {
 
     static async login(email, password) {
         try {
+            console.log('Login başlatılıyor...');
             const userCredential = await signInWithEmailAndPassword(
                 auth,
-                email,
+                email.trim(),
                 password
             );
             const user = userCredential.user;
 
-            try {
-                const userProfile = await this.getUserProfile(user.uid);
-
-                // Son giriş zamanını güncelle
-                const userDocRef = doc(firestore, 'users', user.uid);
-                await updateDoc(userDocRef, {
-                    lastLogin: new Date(),
-                });
-
-                // Eğer profil tamamlanmamışsa complete-profile sayfasına yönlendir
-                if (!userProfile.isProfileComplete) {
-                    window.location.href = '/complete-profile';
-                    return null;
-                }
-
-                console.log('Kullanıcı girişi başarılı:', user);
-                return user;
-            } catch (profileError) {
-                console.error('Profil kontrol hatası:', profileError);
-
-                // Profil alınamadıysa da hata ver
-                throw new Error('Kullanıcı profili alınamadı');
+            if (!user) {
+                throw new Error('Giriş başarısız');
             }
-        } catch (error) {
-            console.error('Giriş hatası:', error);
 
+            // Son giriş zamanını güncelle
+            const userDocRef = doc(firestore, 'users', user.uid);
+            await updateDoc(userDocRef, {
+                lastLogin: new Date(),
+            });
+
+            console.log('Kullanıcı giriş yaptı:', user);
+            return userCredential; // Direkt userCredential döndür
+        } catch (error) {
+            console.error('Login hatası:', error);
+
+            // Hata mesajlarını özelleştir
             switch (error.code) {
                 case 'auth/invalid-credential':
                     throw new Error('E-posta veya şifre hatalı');
@@ -212,11 +203,11 @@ export class AuthService {
                 case 'auth/wrong-password':
                     throw new Error('Yanlış şifre');
                 case 'auth/too-many-requests':
-                    throw new Error(
-                        'Çok fazla başarısız giriş denemesi. Lütfen daha sonra tekrar deneyin.'
-                    );
+                    throw new Error('Çok fazla başarısız giriş denemesi');
                 default:
-                    throw new Error('Giriş sırasında bir hata oluştu');
+                    throw new Error(
+                        error.message || 'Giriş sırasında bir hata oluştu'
+                    );
             }
         }
     }
@@ -360,18 +351,30 @@ export class AuthService {
     }
 
     static onAuthStateChange(callback) {
-        return onAuthStateChanged(auth, (user) => {
-            console.log('Auth state değişti:', user);
-            callback(user);
-        });
+        try {
+            return onAuthStateChanged(auth, (user) => {
+                console.log(
+                    'Auth durumu değişti:',
+                    user ? 'Kullanıcı var' : 'Kullanıcı yok'
+                );
+                callback(user);
+            });
+        } catch (error) {
+            console.error('Auth state listener hatası:', error);
+            callback(null);
+            return () => {}; // Boş bir unsubscribe fonksiyonu
+        }
     }
 
     static getCurrentUser() {
-        const user = auth.currentUser;
-
-        console.log('getCurrentUser - Mevcut kullanıcı:', user);
-
-        return user;
+        try {
+            const user = auth.currentUser;
+            console.log('Current user:', user);
+            return user;
+        } catch (error) {
+            console.error('getCurrentUser error:', error);
+            return null;
+        }
     }
 
     static async reloadCurrentUser() {

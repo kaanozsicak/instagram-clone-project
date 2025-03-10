@@ -3,153 +3,134 @@ import {
     doc,
     getDoc,
     updateDoc,
-    arrayUnion,
-    arrayRemove,
     setDoc,
     collection,
     query,
     where,
     getDocs,
+    arrayUnion,
+    arrayRemove,
 } from 'firebase/firestore';
 import { AuthService } from './auth-service.js';
-import { NotificationService } from './notification-service.js';
 
 export class FollowService {
-    static async getUserByUsername(username) {
+    static async followUser(username) {
         try {
-            const usersRef = collection(firestore, 'users');
-            const q = query(usersRef, where('username', '==', username));
-            const querySnapshot = await getDocs(q);
+            const currentUser = AuthService.getCurrentUser();
+            if (!currentUser) {
+                throw new Error('Kullanıcı oturumu açık değil');
+            }
 
-            if (querySnapshot.empty) {
+            // Takip edilecek kullanıcıyı bul
+            const targetUser = await this.getUserByUsername(username);
+            if (!targetUser) {
                 throw new Error('Kullanıcı bulunamadı');
             }
 
-            const userDoc = querySnapshot.docs[0];
-            return {
-                uid: userDoc.id,
-                ...userDoc.data(),
-            };
+            // Kendinizi takip etmeye çalışıyorsanız
+            if (targetUser.uid === currentUser.uid) {
+                throw new Error('Kendinizi takip edemezsiniz');
+            }
+
+            // Kullanıcının gizlilik ayarlarını kontrol et
+            const isPrivate = targetUser.isPrivate || false;
+
+            // Bildirim servisini dinamik olarak import et
+            const NotificationService = await import(
+                '../services/notification-service.js'
+            ).then((module) => module.default || module.NotificationService);
+
+            // Eğer kullanıcı gizli hesap ise takip isteği gönder
+            if (isPrivate) {
+                console.log('Gizli hesap için takip isteği gönderiliyor');
+
+                // Takip isteği bildirimini oluştur
+                await NotificationService.sendFollowRequest(
+                    currentUser.uid,
+                    currentUser.displayName ||
+                        (await this.getCurrentUsername()),
+                    targetUser.uid
+                );
+
+                console.log(
+                    'Takip isteği gönderildi, "pending" durumu döndürülüyor'
+                );
+                return 'pending';
+            }
+
+            // Gizli hesap değilse direkt takip et
+            await this.directFollow(currentUser.uid, targetUser.uid);
+
+            console.log('Kullanıcı başarıyla takip edildi');
+            return true;
         } catch (error) {
-            console.error('Kullanıcı arama hatası:', error);
+            console.error('Kullanıcı takip hatası:', error);
             throw error;
         }
     }
 
-    static async addFollower(currentUserId, targetUserId) {
+    static async directFollow(followerUid, followedUid) {
         try {
-            // Followers koleksiyonunda ilgili dökümanları al/oluştur
-            const followingRef = doc(firestore, 'followers', currentUserId);
-            const followersRef = doc(firestore, 'followers', targetUserId);
+            // Takip eden kullanıcının takip listesine ekle
+            const followerRef = doc(firestore, 'followers', followerUid);
+            const followerDoc = await getDoc(followerRef);
 
-            // Following ve followers belgelerini kontrol et ve güncelle
-            await setDoc(
-                followingRef,
-                {
-                    following: arrayUnion(targetUserId),
-                },
-                { merge: true }
-            );
+            if (!followerDoc.exists()) {
+                await setDoc(followerRef, { following: [followedUid] });
+            } else {
+                const followerData = followerDoc.data();
+                const following = Array.isArray(followerData.following)
+                    ? [...followerData.following]
+                    : [];
 
-            await setDoc(
-                followersRef,
-                {
-                    followers: arrayUnion(currentUserId),
-                },
-                { merge: true }
-            );
+                // Zaten takip ediliyorsa return
+                if (following.includes(followedUid)) {
+                    return;
+                }
+
+                following.push(followedUid);
+                await updateDoc(followerRef, { following });
+            }
+
+            // Takip edilen kullanıcının takipçi listesine ekle
+            const followedRef = doc(firestore, 'followers', followedUid);
+            const followedDoc = await getDoc(followedRef);
+
+            if (!followedDoc.exists()) {
+                await setDoc(followedRef, { followers: [followerUid] });
+            } else {
+                const followedData = followedDoc.data();
+                const followers = Array.isArray(followedData.followers)
+                    ? [...followedData.followers]
+                    : [];
+
+                if (!followers.includes(followerUid)) {
+                    followers.push(followerUid);
+                    await updateDoc(followedRef, { followers });
+                }
+            }
+
+            // Takip etme bildirimi gönder (istek değil)
+            const currentUsername = await this.getCurrentUsername();
+
+            // Bildirim servisini dinamik olarak import et
+            const NotificationService = await import(
+                '../services/notification-service.js'
+            ).then((module) => module.default || module.NotificationService);
+
+            await NotificationService.createNotification({
+                type: 'follow',
+                status: 'completed',
+                senderUserId: followerUid,
+                senderUsername: currentUsername,
+                receiverUserId: followedUid,
+                content: `${currentUsername} sizi takip etmeye başladı`,
+            });
 
             return true;
         } catch (error) {
-            console.error('Takipçi ekleme hatası:', error);
+            console.error('Direkt takip hatası:', error);
             throw error;
-        }
-    }
-
-    static async followUser(targetUsername) {
-        try {
-            const currentUser = AuthService.getCurrentUser();
-            if (!currentUser) throw new Error('Kullanıcı oturumu açık değil');
-
-            // Hedef kullanıcının bilgilerini al
-            const targetUser = await this.getUserByUsername(targetUsername);
-
-            // Mevcut kullanıcının profilini al
-            const currentUserProfile = await AuthService.getUserProfile(
-                currentUser.uid
-            );
-
-            // Eğer hedef hesap gizliyse
-            if (targetUser.isPrivate) {
-                // Bildirim gönder
-                await NotificationService.sendFollowRequest(
-                    targetUser.uid, // Hedef kullanıcının ID'si
-                    currentUser.uid, // İstek gönderen kullanıcının ID'si
-                    currentUserProfile.username, // İstek gönderen kullanıcının adı
-                    targetUser.username // Hedef kullanıcının adı
-                );
-
-                return 'pending';
-            } else {
-                // Gizli değilse direkt takip et
-                await this.addFollower(currentUser.uid, targetUser.uid);
-                return 'following';
-            }
-        } catch (error) {
-            console.error('Takip isteği gönderme hatası:', error);
-            throw error;
-        }
-    }
-
-    static async getFollowing(userId) {
-        try {
-            const followingRef = doc(firestore, 'followers', userId);
-            const followingDoc = await getDoc(followingRef);
-
-            if (!followingDoc.exists()) {
-                console.log('Takip edilen kullanıcı bulunamadı');
-                return [];
-            }
-
-            const following = followingDoc.data().following || [];
-            console.log('Takip edilen kullanıcılar:', following);
-            return following;
-        } catch (error) {
-            console.error('Takip listesi alma hatası:', error);
-            return [];
-        }
-    }
-
-    static async checkFollowStatus(username) {
-        try {
-            const currentUser = AuthService.getCurrentUser();
-            if (!currentUser) return false;
-
-            // Hedef kullanıcının uid'sini bul
-            const usersRef = collection(firestore, 'users');
-            const q = query(usersRef, where('username', '==', username));
-            const userSnapshot = await getDocs(q);
-
-            if (userSnapshot.empty) {
-                console.error('Kullanıcı bulunamadı:', username);
-                return false;
-            }
-
-            const targetUserId = userSnapshot.docs[0].id;
-
-            // Takip durumunu kontrol et
-            const followingRef = doc(firestore, 'followers', currentUser.uid);
-            const followingDoc = await getDoc(followingRef);
-
-            if (!followingDoc.exists()) {
-                return false;
-            }
-
-            const following = followingDoc.data().following || [];
-            return following.includes(targetUserId);
-        } catch (error) {
-            console.error('Takip durumu kontrol hatası:', error);
-            return false;
         }
     }
 
@@ -191,85 +172,138 @@ export class FollowService {
         }
     }
 
-    static async getFollowersCount(username) {
+    static async getUserByUsername(username) {
         try {
-            // Önce kullanıcının uid'sini bul
             const usersRef = collection(firestore, 'users');
-            const q = query(usersRef, where('username', '==', username));
-            const userSnapshot = await getDocs(q);
+            const q = query(
+                usersRef,
+                where('username', '==', username.toLowerCase())
+            );
 
-            if (userSnapshot.empty) {
-                console.error('Kullanıcı bulunamadı:', username);
-                return 0;
+            const querySnapshot = await getDocs(q);
+
+            if (querySnapshot.empty) {
+                return null;
             }
 
-            const userId = userSnapshot.docs[0].id;
+            const userDoc = querySnapshot.docs[0];
+            return {
+                uid: userDoc.id,
+                ...userDoc.data(),
+            };
+        } catch (error) {
+            console.error('Kullanıcı arama hatası:', error);
+            throw error;
+        }
+    }
 
-            // Followers belgesini al
-            const followersRef = doc(firestore, 'followers', userId);
+    static async getCurrentUsername() {
+        try {
+            const currentUser = AuthService.getCurrentUser();
+            if (!currentUser) return 'Kullanıcı';
+
+            const userProfile = await AuthService.getUserProfile(
+                currentUser.uid
+            );
+            return (
+                userProfile?.username || currentUser.displayName || 'Kullanıcı'
+            );
+        } catch (error) {
+            console.error('Kullanıcı adı alma hatası:', error);
+            return 'Kullanıcı';
+        }
+    }
+
+    static async checkFollowRequestStatus(username) {
+        try {
+            const currentUser = AuthService.getCurrentUser();
+            if (!currentUser) {
+                throw new Error('Kullanıcı oturumu açık değil');
+            }
+
+            // Takip edilecek kullanıcıyı bul
+            const targetUser = await this.getUserByUsername(username);
+            if (!targetUser) {
+                throw new Error('Kullanıcı bulunamadı');
+            }
+
+            // Takip durumunu kontrol et
+            const followerRef = doc(firestore, 'followers', currentUser.uid);
+            const followerDoc = await getDoc(followerRef);
+
+            let isFollowing = false;
+            if (followerDoc.exists()) {
+                const followerData = followerDoc.data();
+                const following = Array.isArray(followerData.following)
+                    ? followerData.following
+                    : [];
+                isFollowing = following.includes(targetUser.uid);
+            }
+
+            // Bildirimler koleksiyonunda bekleyen takip isteği var mı kontrol et
+            const notificationsRef = collection(firestore, 'notifications');
+            const q = query(
+                notificationsRef,
+                where('type', '==', 'follow_request'),
+                where('senderUserId', '==', currentUser.uid),
+                where('receiverUserId', '==', targetUser.uid),
+                where('status', '==', 'pending')
+            );
+
+            const querySnapshot = await getDocs(q);
+            const isPending = !querySnapshot.empty;
+
+            return {
+                isFollowing,
+                isPending,
+            };
+        } catch (error) {
+            console.error('Takip durumu kontrolü hatası:', error);
+            return {
+                isFollowing: false,
+                isPending: false,
+            };
+        }
+    }
+
+    static async getFollowersCount(username) {
+        try {
+            const targetUser = await this.getUserByUsername(username);
+            if (!targetUser) {
+                throw new Error('Kullanıcı bulunamadı');
+            }
+
+            const followersRef = doc(firestore, 'followers', targetUser.uid);
             const followersDoc = await getDoc(followersRef);
 
             if (!followersDoc.exists()) {
                 return 0;
             }
 
-            // Followers dizisinin uzunluğunu döndür
-            const followers = followersDoc.data().followers || [];
-            return followers.length;
+            const followersData = followersDoc.data();
+            return Array.isArray(followersData.followers)
+                ? followersData.followers.length
+                : 0;
         } catch (error) {
             console.error('Takipçi sayısı alma hatası:', error);
             return 0;
         }
     }
 
-    static async checkFollowRequestStatus(targetUsername) {
+    static async getFollowing(userId) {
         try {
-            const currentUser = AuthService.getCurrentUser();
-            if (!currentUser) return { isFollowing: false, isPending: false };
+            const followersRef = doc(firestore, 'followers', userId);
+            const followersDoc = await getDoc(followersRef);
 
-            // Hedef kullanıcıyı bul
-            const targetUser = await this.getUserByUsername(targetUsername);
+            if (!followersDoc.exists()) {
+                return [];
+            }
 
-            // Takip durumunu kontrol et
-            const isFollowing = await this.checkFollowStatus(targetUsername);
-
-            // Bekleyen istek durumunu kontrol et
-            const notifications = await NotificationService.getNotifications(
-                targetUser.uid
-            );
-            const hasPendingRequest = notifications.some(
-                (n) =>
-                    n.type === 'follow_request' &&
-                    n.status === 'pending' &&
-                    n.senderUserId === currentUser.uid
-            );
-
-            return {
-                isFollowing,
-                isPending: hasPendingRequest,
-            };
+            const data = followersDoc.data();
+            return Array.isArray(data.following) ? data.following : [];
         } catch (error) {
-            console.error('Takip durumu kontrolü hatası:', error);
-            return { isFollowing: false, isPending: false };
-        }
-    }
-
-    static async saveFollowRequest(senderId, targetId) {
-        try {
-            const followRequestsRef = doc(
-                firestore,
-                'followRequests',
-                `${senderId}_${targetId}`
-            );
-            await setDoc(followRequestsRef, {
-                senderId,
-                targetId,
-                status: 'pending',
-                createdAt: new Date().toISOString(),
-            });
-        } catch (error) {
-            console.error('Takip isteği kaydetme hatası:', error);
-            throw error;
+            console.error('Takip edilenleri alma hatası:', error);
+            return [];
         }
     }
 }

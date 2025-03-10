@@ -123,64 +123,53 @@ export class PostService {
     static async getFollowedUsersPosts() {
         try {
             const currentUser = AuthService.getCurrentUser();
+            console.log('Current user:', currentUser?.uid);
+
             if (!currentUser) {
                 throw new Error('Kullanıcı oturumu açık değil');
             }
 
-            console.log('Current user:', currentUser.uid);
+            // İlgili servisi import et
+            const FollowService = await import('./follow-service.js').then(
+                (module) => module.default
+            );
 
-            // Takip edilen kullanıcıların listesini al
-            const followingList = await FollowService.getFollowing(
+            // Kullanıcının takip ettiği kişilerin listesini al
+            const followingUsers = await FollowService.getFollowing(
                 currentUser.uid
             );
-            console.log('Takip edilen kullanıcılar:', followingList);
+            console.log('Takip edilen kullanıcılar:', followingUsers);
 
-            // Kendi ID'mizi de ekleyelim
-            const userIds = [currentUser.uid, ...followingList];
-            console.log('Gönderi aranacak kullanıcılar:', userIds);
+            // Takip edilen kullanıcılar ve kendisi
+            const usersToFetch = [...followingUsers, currentUser.uid];
+            console.log('Gönderi aranacak kullanıcılar:', usersToFetch);
 
-            if (userIds.length === 0) {
-                console.log('Hiç kullanıcı bulunamadı');
-                return [];
+            const posts = [];
+
+            // Her bir kullanıcı için gönderileri al
+            for (const userId of usersToFetch) {
+                try {
+                    console.log(
+                        `${userId} kullanıcısının gönderileri getiriliyor...`
+                    );
+                    const userPosts = await this.getUserPostsById(userId);
+                    posts.push(...userPosts);
+                } catch (error) {
+                    console.warn(
+                        `${userId} kullanıcısının gönderileri alınırken hata:`,
+                        error
+                    );
+                }
             }
 
-            const postsRef = collection(firestore, 'posts');
-            const allPosts = [];
+            // Gönderileri tarihe göre sırala (en yeniden en eskiye)
+            posts.sort((a, b) => b.createdAt - a.createdAt);
 
-            // Her kullanıcı için ayrı sorgu yap
-            for (const userId of userIds) {
-                console.log(
-                    `${userId} kullanıcısının gönderileri getiriliyor...`
-                );
-
-                const q = query(
-                    postsRef,
-                    where('userId', '==', userId),
-                    orderBy('createdAt', 'desc')
-                );
-
-                const querySnapshot = await getDocs(q);
-                querySnapshot.forEach((doc) => {
-                    const postData = doc.data();
-                    allPosts.push({
-                        id: doc.id,
-                        ...postData,
-                        createdAt: postData.createdAt?.toDate(),
-                        formattedDate: postData.createdAt
-                            ? this.formatDate(postData.createdAt.toDate())
-                            : '',
-                    });
-                });
-            }
-
-            // Tüm gönderileri tarihe göre sırala
-            allPosts.sort((a, b) => b.createdAt - a.createdAt);
-
-            console.log('Toplam bulunan gönderi sayısı:', allPosts.length);
-            return allPosts;
+            console.log('Toplam bulunan gönderi sayısı:', posts.length);
+            return posts;
         } catch (error) {
             console.error('Gönderiler alınırken hata:', error);
-            console.error('Hata detayı:', error.stack);
+            console.error('Hata detayı:', error);
             return [];
         }
     }
