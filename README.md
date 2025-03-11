@@ -52,10 +52,15 @@ npm start
 ## 📄 Proje Yapısı
 
 📁 src/
+
 ┣ 📁 components/ # UI bileşenleri
+
 ┣ 📁 pages/ # Ana sayfa bileşenleri
+
 ┣ 📁 services/ # Firebase ve diğer servisler
+
 ┣ 📁 styles/ # CSS dosyaları
+
 ┗ 📄 app.js # Ana uygulama
 
 📁 public/ # Statik dosyalar
