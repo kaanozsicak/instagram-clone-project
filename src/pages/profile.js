@@ -1021,6 +1021,14 @@ class ProfilePage {
         });
 
         if (pageData.isOwnProfile) {
+            // Profil düzenleme butonu için event listener ekle
+            const editProfileBtn = document.getElementById('edit-profile-btn');
+            if (editProfileBtn) {
+                editProfileBtn.addEventListener('click', () => {
+                    this.showProfileEditModal(pageData.profileUser);
+                });
+            }
+
             const addPostBtn = document.getElementById('add-post-btn');
             const postFileInput = document.getElementById('post-file-input');
             const postsGrid = document.getElementById('posts-grid');
@@ -1180,6 +1188,287 @@ class ProfilePage {
                 }
             });
         }
+    }
+
+    /**
+     * Profil düzenleme modalını gösterir
+     * @param {Object} profileData - Profil verileri
+     */
+    static async showProfileEditModal(profileData) {
+        const modalHtml = `
+            <div class="modal" id="profile-edit-modal">
+                <div class="modal-content">
+                    <h2>Profil Düzenle</h2>
+                    <div class="profile-image-upload" style="text-align: center; margin-bottom: 20px;">
+                        <img 
+                            src="${
+                                profileData.profileImage ||
+                                profileData.profilePicture ||
+                                'data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHZpZXdCb3g9IjAgMCAyMDAgMjAwIj48Y2lyY2xlIGN4PSIxMDAiIGN5PSIxMDAiIHI9IjEwMCIgZmlsbD0iI2U2ZTZlNiIvPjxjaXJjbGUgY3g9IjEwMCIgY3k9IjgwIiByPSI0MCIgZmlsbD0iI2IzYjNiMyIvPjxwYXRoIGQ9Ik0xNjAgMTgwYzAtMzMuMTM3LTI2Ljg2My02MC02MC02MHMtNjAgMjYuODYzLTYwIDYwaDEyMHoiIGZpbGw9IiNiM2IzYjMiLz48L3N2Zz4='
+                            }" 
+                            alt="${profileData.username}" 
+                            id="profile-image-preview"
+                            style="width: 120px; height: 120px; border-radius: 50%; object-fit: cover; border: 3px solid var(--primary-light); margin-bottom: 15px;"
+                        >
+                        <input type="file" id="profile-image-input" accept="image/*" style="display: none;">
+                        <button 
+                            id="change-profile-image-btn"
+                            style="
+                                background-color: var(--primary-color);
+                                color: white;
+                                border: none;
+                                padding: 8px 14px;
+                                border-radius: 8px;
+                                cursor: pointer;
+                                font-weight: 600;
+                            "
+                        >
+                            Profil Resmini Değiştir
+                        </button>
+                    </div>
+                    <form id="profile-edit-form">
+                        <div class="form-group" style="margin-bottom: 15px;">
+                            <label for="fullName" style="display: block; margin-bottom: 5px; font-weight: 500;">Ad Soyad</label>
+                            <input 
+                                type="text" 
+                                id="fullName" 
+                                value="${profileData.fullName || ''}" 
+                                style="
+                                    width: 100%;
+                                    padding: 10px 12px;
+                                    border: 1px solid var(--border-color);
+                                    border-radius: 8px;
+                                    font-size: 15px;
+                                "
+                            >
+                        </div>
+                        <div class="form-group" style="margin-bottom: 15px;">
+                            <label for="username" style="display: block; margin-bottom: 5px; font-weight: 500;">Kullanıcı Adı</label>
+                            <input 
+                                type="text" 
+                                id="username" 
+                                value="${profileData.username}" 
+                                style="
+                                    width: 100%;
+                                    padding: 10px 12px;
+                                    border: 1px solid var(--border-color);
+                                    border-radius: 8px;
+                                    font-size: 15px;
+                                "
+                            >
+                            <small id="username-status" style="font-size: 12px; margin-top: 5px; display: block;"></small>
+                        </div>
+                        <div class="form-group" style="margin-bottom: 15px;">
+                            <label for="bio" style="display: block; margin-bottom: 5px; font-weight: 500;">Biyografi</label>
+                            <textarea 
+                                id="bio" 
+                                rows="4" 
+                                style="
+                                    width: 100%;
+                                    padding: 10px 12px;
+                                    border: 1px solid var(--border-color);
+                                    border-radius: 8px;
+                                    font-size: 15px;
+                                    resize: vertical;
+                                "
+                            >${profileData.bio || ''}</textarea>
+                        </div>
+                        <div class="buttons" style="display: flex; gap: 10px; justify-content: flex-end;">
+                            <button 
+                                type="button" 
+                                id="cancel-edit-btn"
+                                style="
+                                    background-color: #f1f1f1;
+                                    color: var(--text-secondary);
+                                    border: none;
+                                    padding: 10px 16px;
+                                    border-radius: 8px;
+                                    cursor: pointer;
+                                    font-weight: 600;
+                                "
+                            >
+                                İptal
+                            </button>
+                            <button 
+                                type="submit" 
+                                id="save-profile-btn"
+                                style="
+                                    background-color: var(--primary-color);
+                                    color: white;
+                                    border: none;
+                                    padding: 10px 16px;
+                                    border-radius: 8px;
+                                    cursor: pointer;
+                                    font-weight: 600;
+                                "
+                            >
+                                Kaydet
+                            </button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        `;
+
+        document.body.insertAdjacentHTML('beforeend', modalHtml);
+
+        const modal = document.getElementById('profile-edit-modal');
+        const profileImageInput = document.getElementById(
+            'profile-image-input'
+        );
+        const changeProfileImageBtn = document.getElementById(
+            'change-profile-image-btn'
+        );
+        const profileImagePreview = document.getElementById(
+            'profile-image-preview'
+        );
+        const cancelEditBtn = document.getElementById('cancel-edit-btn');
+        const profileEditForm = document.getElementById('profile-edit-form');
+        const usernameInput = document.getElementById('username');
+        const usernameStatus = document.getElementById('username-status');
+
+        let selectedProfileImage = null;
+        let originalUsername = profileData.username;
+        let isUsernameAvailable = true;
+
+        // Profil resmi değiştirme butonu event listener
+        changeProfileImageBtn.addEventListener('click', () => {
+            profileImageInput.click();
+        });
+
+        // Profil resmi yükleme
+        profileImageInput.addEventListener('change', (e) => {
+            const file = e.target.files[0];
+            if (file) {
+                selectedProfileImage = file;
+                const reader = new FileReader();
+                reader.onload = function (event) {
+                    profileImagePreview.src = event.target.result;
+                };
+                reader.readAsDataURL(file);
+            }
+        });
+
+        // Kullanıcı adı değişikliğini kontrol et
+        usernameInput.addEventListener('input', async (e) => {
+            const newUsername = e.target.value.trim();
+
+            if (newUsername === originalUsername) {
+                usernameStatus.textContent = '';
+                isUsernameAvailable = true;
+                return;
+            }
+
+            if (newUsername.length < 3) {
+                usernameStatus.textContent =
+                    'Kullanıcı adı en az 3 karakter olmalıdır';
+                usernameStatus.style.color = 'red';
+                isUsernameAvailable = false;
+                return;
+            }
+
+            const usernameRegex = /^[a-z0-9_]+$/;
+            if (!usernameRegex.test(newUsername)) {
+                usernameStatus.textContent =
+                    'Kullanıcı adı sadece küçük harf, rakam ve alt çizgi içerebilir';
+                usernameStatus.style.color = 'red';
+                isUsernameAvailable = false;
+                return;
+            }
+
+            usernameStatus.textContent = 'Kontrol ediliyor...';
+            usernameStatus.style.color = '#666';
+
+            try {
+                const { AuthService } = await import(
+                    '../services/auth-service.js'
+                );
+                const available = await AuthService.checkUsernameAvailability(
+                    newUsername
+                );
+
+                if (available) {
+                    usernameStatus.textContent = '✓ Kullanıcı adı uygun';
+                    usernameStatus.style.color = 'green';
+                    isUsernameAvailable = true;
+                } else {
+                    usernameStatus.textContent =
+                        '✗ Bu kullanıcı adı zaten kullanılıyor';
+                    usernameStatus.style.color = 'red';
+                    isUsernameAvailable = false;
+                }
+            } catch (error) {
+                console.error('Kullanıcı adı kontrolü hatası:', error);
+                usernameStatus.textContent =
+                    'Kontrol sırasında bir hata oluştu';
+                usernameStatus.style.color = 'red';
+                isUsernameAvailable = false;
+            }
+        });
+
+        // İptal butonu event listener
+        cancelEditBtn.addEventListener('click', () => {
+            modal.remove();
+        });
+
+        // Form gönderimi event listener
+        profileEditForm.addEventListener('submit', async (e) => {
+            e.preventDefault();
+
+            const fullName = document.getElementById('fullName').value.trim();
+            const username = document.getElementById('username').value.trim();
+            const bio = document.getElementById('bio').value.trim();
+
+            // Kullanıcı adı kontrolleri
+            if (username !== originalUsername && !isUsernameAvailable) {
+                alert('Lütfen geçerli bir kullanıcı adı seçin');
+                return;
+            }
+
+            try {
+                // Butonları devre dışı bırak ve yükleniyor göster
+                const saveButton = document.getElementById('save-profile-btn');
+                const cancelButton = document.getElementById('cancel-edit-btn');
+                saveButton.disabled = true;
+                cancelButton.disabled = true;
+                saveButton.textContent = 'Kaydediliyor...';
+
+                const { AuthService } = await import(
+                    '../services/auth-service.js'
+                );
+
+                // Profil verilerini güncelle
+                const updatedProfileData = {
+                    fullName,
+                    username: username.toLowerCase(),
+                    bio,
+                };
+
+                await AuthService.updateUserProfile(
+                    profileData.uid,
+                    updatedProfileData,
+                    selectedProfileImage
+                );
+
+                // Başarı mesajı göster
+                alert('Profil başarıyla güncellendi');
+
+                // Sayfayı yenile
+                window.location.reload();
+            } catch (error) {
+                console.error('Profil güncelleme hatası:', error);
+                alert(
+                    'Profil güncellenirken bir hata oluştu: ' + error.message
+                );
+
+                // Hata durumunda butonları tekrar aktifleştir
+                const saveButton = document.getElementById('save-profile-btn');
+                const cancelButton = document.getElementById('cancel-edit-btn');
+                saveButton.disabled = false;
+                cancelButton.disabled = false;
+                saveButton.textContent = 'Kaydet';
+            }
+        });
     }
 
     static async openPostModal(postId) {
