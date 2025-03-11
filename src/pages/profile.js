@@ -199,7 +199,7 @@ class ProfilePage {
                         outline: none;
                         margin-left: 10px;
                         font-size: 15px;
-                        color: var(--text-primary);
+                        color: var (--text-primary);
                     }
                     
                     .search-results {
@@ -1197,7 +1197,9 @@ class ProfilePage {
                     <div class="post-modal-details">
                         <div class="post-modal-header">
                             <img src="${
-                                post.profileImage || '/default-avatar.png'
+                                post.profileImage ||
+                                post.profilePicture ||
+                                'data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHZpZXdCb3g9IjAgMCAyMDAgMjAwIj48Y2lyY2xlIGN4PSIxMDAiIGN5PSIxMDAiIHI9IjEwMCIgZmlsbD0iI2U2ZTZlNiIvPjxjaXJjbGUgY3g9IjEwMCIgY3k9IjgwIiByPSI0MCIgZmlsbD0iI2IzYjNiMyIvPjxwYXRoIGQ9Ik0xNjAgMTgwYzAtMzMuMTM3LTI2Ljg2My02MC02MC02MHMtNjAgMjYuODYzLTYwIDYwaDEyMHoiIGZpbGw9IiNiM2IzYjMiLz48L3N2Zz4='
                             }" alt="Profil" class="post-user-avatar">
                             <span class="post-username">${post.username}</span>
                         </div>
@@ -1313,7 +1315,10 @@ class ProfilePage {
                 fullName: userData.fullName || '',
                 username: userData.username || '',
                 bio: userData.bio || '',
-                profileImage: userData.profileImage || '/default-avatar.png',
+                profileImage:
+                    userData.profileImage ||
+                    userData.profilePicture ||
+                    'data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHZpZXdCb3g9IjAgMCAyMDAgMjAwIj48Y2lyY2xlIGN4PSIxMDAiIGN5PSIxMDAiIHI9IjEwMCIgZmlsbD0iI2U2ZTZlNiIvPjxjaXJjbGUgY3g9IjEwMCIgY3k9IjgwIiByPSI0MCIgZmlsbD0iI2IzYjNiMyIvPjxwYXRoIGQ9Ik0xNjAgMTgwYzAtMzMuMTM3LTI2Ljg2My02MC02MC02MHMtNjAgMjYuODYzLTYwIDYwaDEyMHoiIGZpbGw9IiNiM2IzYjMiLz48L3N2Zz4=',
             };
 
             console.log('Bulunan kullanıcı profili:', profileData);

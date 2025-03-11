@@ -1,162 +1,111 @@
 import { firestore } from './firebase-config.js';
 import {
     collection,
-    doc,
-    addDoc,
-    getDoc,
-    getDocs,
-    updateDoc,
     query,
     where,
-    orderBy,
+    getDocs,
+    addDoc,
+    updateDoc,
+    doc,
     serverTimestamp,
+    orderBy,
     Timestamp,
-    limit,
 } from 'firebase/firestore';
+import { AuthService } from './auth-service.js';
+import { FollowService } from './follow-service.js';
 
 export class NotificationService {
-    static async getNotifications(userId, limitCount = 10) {
+    /**
+     * Kullanıcının bildirimlerini getirir
+     * @param {string} userId - Bildirimleri alınacak kullanıcının ID'si
+     * @returns {Promise<Array>} - Bildirimlerin listesi
+     */
+    static async getNotifications(userId) {
         try {
             const notificationsRef = collection(firestore, 'notifications');
-
-            // Basit bir sorgu kullanarak index sorununu çözelim
-            // Gelen hatada Firestore, createdAt ile birlikte indeks oluşturmamızı istediği için
-            // şimdilik sadece receiverUserId ile filtreleme yapalım
             const q = query(
                 notificationsRef,
-                where('receiverUserId', '==', userId),
-                limit(limitCount)
+                where('recipientId', '==', userId),
+                orderBy('createdAt', 'desc')
             );
 
             const querySnapshot = await getDocs(q);
 
-            // Bildirimleri döndür
-            const notifications = querySnapshot.docs.map((doc) => ({
+            return querySnapshot.docs.map((doc) => ({
                 id: doc.id,
                 ...doc.data(),
-                // Eğer createdAt varsa ve bir timestamp ise onayla, yoksa şimdiki zamanı kullan
-                createdAt: doc.data().createdAt || Timestamp.now(),
+                createdAt: doc.data().createdAt,
             }));
-
-            // Bellek içinde sıralama yapalım
-            notifications.sort((a, b) => {
-                // Timestamp nesnelerini karşılaştırma
-                const dateA = a.createdAt?.toMillis
-                    ? a.createdAt.toMillis()
-                    : 0;
-                const dateB = b.createdAt?.toMillis
-                    ? b.createdAt.toMillis()
-                    : 0;
-                return dateB - dateA; // Azalan sıralama (en yeni ilk)
-            });
-
-            return notifications;
         } catch (error) {
             console.error('Bildirimler alınırken hata:', error);
             return [];
         }
     }
 
-    static async createNotification(notification) {
+    /**
+     * Yeni bir bildirim oluşturur
+     * @param {Object} notificationData - Bildirim verileri
+     * @returns {Promise<string>} - Oluşturulan bildirimin ID'si
+     */
+    static async createNotification(notificationData) {
         try {
-            const notificationsRef = collection(firestore, 'notifications');
-
-            // Bildirime tarih ekle
-            notification.createdAt = serverTimestamp();
-            notification.isRead = false;
-
-            // Bildirimi Firestore'a ekle
-            const docRef = await addDoc(notificationsRef, notification);
-
-            return {
-                id: docRef.id,
-                ...notification,
+            const notificationWithTimestamp = {
+                ...notificationData,
+                isRead: false,
+                createdAt: serverTimestamp(),
             };
+
+            const docRef = await addDoc(
+                collection(firestore, 'notifications'),
+                notificationWithTimestamp
+            );
+
+            return docRef.id;
         } catch (error) {
             console.error('Bildirim oluşturulurken hata:', error);
             throw error;
         }
     }
 
-    static async markAsRead(notificationId) {
-        try {
-            const notificationRef = doc(
-                firestore,
-                'notifications',
-                notificationId
-            );
-
-            await updateDoc(notificationRef, {
-                isRead: true,
-                readAt: serverTimestamp(),
-            });
-
-            return true;
-        } catch (error) {
-            console.error('Bildirim okundu olarak işaretlenirken hata:', error);
-            return false;
-        }
-    }
-
+    /**
+     * Takip isteğini işler (kabul veya red)
+     * @param {string} notificationId - Bildirim ID'si
+     * @param {boolean} isAccepted - Kabul edildi mi
+     * @param {string} currentUserId - Mevcut kullanıcı ID'si
+     * @param {string} requesterId - İstek gönderen kullanıcı ID'si
+     * @returns {Promise<boolean>} - İşlem başarılı mı
+     */
     static async handleFollowRequest(
         notificationId,
         isAccepted,
-        receiverUserId,
-        senderUserId
+        currentUserId,
+        requesterId
     ) {
         try {
-            // Bildirimi güncelle
+            // Bildirim durumunu güncelle
             const notificationRef = doc(
                 firestore,
                 'notifications',
                 notificationId
             );
             await updateDoc(notificationRef, {
-                status: isAccepted ? 'accepted' : 'rejected',
+                status: isAccepted ? 'completed' : 'rejected',
                 isRead: true,
-                updatedAt: serverTimestamp(),
             });
 
+            // İstek kabul edildi ise, takip işlemini gerçekleştir
             if (isAccepted) {
-                // Follow işlemini gerçekleştir
-                const receiverFollowersRef = doc(
-                    firestore,
-                    'followers',
-                    receiverUserId
-                );
-                const senderFollowingRef = doc(
-                    firestore,
-                    'followers',
-                    senderUserId
-                );
+                await FollowService.directFollow(requesterId, currentUserId);
 
-                // Alıcının takipçilerine gönderen kullanıcıyı ekle
-                const receiverDoc = await getDoc(receiverFollowersRef);
-                if (receiverDoc.exists()) {
-                    const receiverData = receiverDoc.data();
-                    const followers = Array.isArray(receiverData.followers)
-                        ? receiverData.followers
-                        : [];
-
-                    if (!followers.includes(senderUserId)) {
-                        followers.push(senderUserId);
-                        await updateDoc(receiverFollowersRef, { followers });
-                    }
-                }
-
-                // Gönderenin takip ettiklerine alıcıyı ekle
-                const senderDoc = await getDoc(senderFollowingRef);
-                if (senderDoc.exists()) {
-                    const senderData = senderDoc.data();
-                    const following = Array.isArray(senderData.following)
-                        ? senderData.following
-                        : [];
-
-                    if (!following.includes(receiverUserId)) {
-                        following.push(receiverUserId);
-                        await updateDoc(senderFollowingRef, { following });
-                    }
-                }
+                // Kabul bildirimi oluştur
+                await this.createNotification({
+                    type: 'follow_accepted',
+                    recipientId: requesterId,
+                    senderUserId: currentUserId,
+                    senderUsername: await this.getUsernameFromId(currentUserId),
+                    content: 'takip isteğinizi kabul etti',
+                    createdAt: new Date(),
+                });
             }
 
             return true;
@@ -166,78 +115,55 @@ export class NotificationService {
         }
     }
 
-    static async sendFollowRequest(
-        senderUserId,
-        senderUsername,
-        receiverUserId
-    ) {
+    /**
+     * Kullanıcı ID'sinden kullanıcı adı getirir
+     * @param {string} userId - Kullanıcı ID'si
+     * @returns {Promise<string>} - Kullanıcı adı
+     */
+    static async getUsernameFromId(userId) {
         try {
-            return await this.createNotification({
-                type: 'follow_request',
-                status: 'pending',
-                senderUserId,
-                senderUsername,
-                receiverUserId,
-                content: `${senderUsername} sizi takip etmek istiyor`,
-            });
+            const userDoc = await AuthService.getUserProfile(userId);
+            return userDoc?.username || 'Kullanıcı';
         } catch (error) {
-            console.error('Takip isteği gönderilirken hata:', error);
-            throw error;
+            console.error('Kullanıcı adı alınırken hata:', error);
+            return 'Kullanıcı';
         }
     }
 
-    static async sendLikeNotification(
-        senderUserId,
-        senderUsername,
-        receiverUserId,
-        postId
-    ) {
-        // Alıcı ve gönderen aynı kişi ise bildirim gönderme
-        if (senderUserId === receiverUserId) return null;
-
+    /**
+     * Tüm bildirimleri okundu olarak işaretler
+     * @param {string} userId - Bildirim sahibinin kullanıcı ID'si
+     * @returns {Promise<boolean>} - İşlem başarılı mı
+     */
+    static async markAllAsRead(userId) {
         try {
-            return await this.createNotification({
-                type: 'like',
-                senderUserId,
-                senderUsername,
-                receiverUserId,
-                postId,
-                content: `${senderUsername} gönderini beğendi`,
-            });
-        } catch (error) {
-            console.error('Beğeni bildirimi gönderilirken hata:', error);
-            // Hata olsa bile akışı bozma
-            return null;
-        }
-    }
+            const notificationsRef = collection(firestore, 'notifications');
+            const q = query(
+                notificationsRef,
+                where('recipientId', '==', userId),
+                where('isRead', '==', false)
+            );
 
-    static async sendCommentNotification(
-        senderUserId,
-        senderUsername,
-        receiverUserId,
-        postId,
-        commentText
-    ) {
-        // Alıcı ve gönderen aynı kişi ise bildirim gönderme
-        if (senderUserId === receiverUserId) return null;
+            const querySnapshot = await getDocs(q);
 
-        try {
-            return await this.createNotification({
-                type: 'comment',
-                senderUserId,
-                senderUsername,
-                receiverUserId,
-                postId,
-                commentText,
-                content: `${senderUsername} gönderine yorum yaptı: "${commentText.substring(
-                    0,
-                    50
-                )}${commentText.length > 50 ? '...' : ''}"`,
+            // Eğer okunmamış bildirim yoksa işlem yapma
+            if (querySnapshot.empty) {
+                return true;
+            }
+
+            // Tüm bildirimleri okundu olarak işaretle
+            const updatePromises = querySnapshot.docs.map((doc) => {
+                return updateDoc(doc.ref, { isRead: true });
             });
+
+            await Promise.all(updatePromises);
+            return true;
         } catch (error) {
-            console.error('Yorum bildirimi gönderilirken hata:', error);
-            // Hata olsa bile akışı bozma
-            return null;
+            console.error(
+                'Bildirimler okundu olarak işaretlenirken hata:',
+                error
+            );
+            return false;
         }
     }
 }

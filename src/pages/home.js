@@ -1,15 +1,16 @@
 import { AuthService } from '../services/auth-service.js';
 import { SearchService } from '../services/search-service.js';
 import { PostService } from '../services/post-service.js';
+import { UserService } from '../services/user-service.js';
 
 class HomePage {
     static async render() {
         console.log('HomePage render başladı');
         try {
-            const currentUser = await AuthService.ensureCurrentUser();
-            console.log('Current user:', currentUser);
+            const authUser = await AuthService.ensureCurrentUser();
+            console.log('Auth user:', authUser);
 
-            if (!currentUser) {
+            if (!authUser) {
                 console.log(
                     'Kullanıcı oturumu yok, login sayfasına yönlendiriliyor'
                 );
@@ -17,11 +18,31 @@ class HomePage {
                 return;
             }
 
+            // Kullanıcının tam profil bilgilerini ayrıca yükleyelim
+            const currentUserProfile = await AuthService.getUserProfile(
+                authUser.uid
+            );
+            console.log('Complete user profile:', currentUserProfile);
+
+            // Profil bilgisi yoksa oluşturalım
+            const userProfile = currentUserProfile || {
+                username: 'kullanici',
+                fullName: '',
+                profilePicture:
+                    'data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHZpZXdCb3g9IjAgMCAyMDAgMjAwIj48Y2lyY2xlIGN4PSIxMDAiIGN5PSIxMDAiIHI9IjEwMCIgZmlsbD0iI2U2ZTZlNiIvPjxjaXJjbGUgY3g9IjEwMCIgY3k9IjgwIiByPSI0MCIgZmlsbD0iI2IzYjNiMyIvPjxwYXRoIGQ9Ik0xNjAgMTgwYzAtMzMuMTM3LTI2Ljg2My02MC02MC02MHMtNjAgMjYuODYzLTYwIDYwaDEyMHoiIGZpbGw9IiNiM2IzYjMiLz48L3N2Zz4=',
+            };
+
             const appContainer = document.getElementById('app');
             if (!appContainer) {
                 console.error('App container bulunamadı');
                 return;
             }
+
+            // Öneri olarak gösterilecek kullanıcıları getir
+            const suggestedUsers = await UserService.getSuggestedUsers(
+                authUser.uid,
+                3
+            );
 
             // Sayfayı oluştur
             appContainer.innerHTML = `
@@ -90,12 +111,12 @@ class HomePage {
                         text-decoration: none;
                         font-weight: 600;
                         transition: all 0.2s ease;
-                        padding: 8px 12px;
-                        border-radius: 8px;
                     }
                     
                     #profile-link:hover {
                         background-color: rgba(85, 99, 222, 0.1);
+                        padding: 8px 12px;
+                        border-radius: 8px;
                     }
                     
                     #logout-button {
@@ -170,12 +191,12 @@ class HomePage {
                         transition: background-color 0.2s ease;
                     }
                     
-                    .search-result-item:hover {
-                        background-color: rgba(85, 99, 222, 0.05);
-                    }
-                    
                     .search-result-item:last-child {
                         border-bottom: none;
+                    }
+                    
+                    .search-result-item:hover {
+                        background-color: rgba(85, 99, 222, 0.05);
                     }
                     
                     .posts-container {
@@ -231,11 +252,11 @@ class HomePage {
                         display: flex;
                         gap: 20px;
                         margin-bottom: 15px;
-                        font-size: 24px;
                     }
                     
                     .action-icons i {
                         color: var(--text-primary);
+                        font-size: 24px;
                         cursor: pointer;
                         transition: all 0.2s ease;
                     }
@@ -312,15 +333,15 @@ class HomePage {
                         color: var(--text-secondary);
                         transition: color 0.2s ease;
                         padding: 5px;
-                        border-radius: 50%;
-                        display: flex;
-                        align-items: center;
-                        justify-content: center;
                     }
                     
                     #notification-btn:hover {
                         color: var(--primary-color);
                         background-color: rgba(85, 99, 222, 0.1);
+                        border-radius: 50%;
+                        display: flex;
+                        align-items: center;
+                        justify-content: center;
                     }
                     
                     #notification-count {
@@ -440,6 +461,33 @@ class HomePage {
                     .empty-state p {
                         color: var(--text-secondary);
                     }
+
+                    .loading-spinner {
+                        display: flex;
+                        justify-content: center;
+                        align-items: center;
+                        padding: 20px;
+                        color: var(--text-secondary);
+                    }
+                    
+                    .spinner {
+                        width: 40px;
+                        height: 40px;
+                        border: 4px solid rgba(0, 0, 0, 0.1);
+                        border-left-color: var(--primary-color);
+                        border-radius: 50%;
+                        animation: spin 1s linear infinite;
+                    }
+                    
+                    @keyframes spin {
+                        to { transform: rotate(360deg); }
+                    }
+                    
+                    #load-more-container {
+                        text-align: center;
+                        padding: 20px;
+                        display: none;
+                    }
                 </style>
                 
                 <div class="home-page">
@@ -471,9 +519,14 @@ class HomePage {
                             </div>
                             
                             <div class="posts-container" id="posts-container">
-                                <div class="empty-state">
-                                    <h3>Gönderiler yükleniyor...</h3>
-                                    <p>Lütfen bekleyiniz</p>
+                                <div class="loading-spinner" id="initial-loading">
+                                    <div class="spinner"></div>
+                                </div>
+                            </div>
+                            
+                            <div id="load-more-container">
+                                <div class="loading-spinner">
+                                    <div class="spinner"></div>
                                 </div>
                             </div>
                         </div>
@@ -483,26 +536,21 @@ class HomePage {
                                 <div class="post-header">
                                     <img 
                                         src="${
-                                            currentUser?.profile
-                                                ?.profilePicture ||
-                                            'https://via.placeholder.com/150'
+                                            userProfile.profilePicture ||
+                                            userProfile.profileImage ||
+                                            'data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHZpZXdCb3g9IjAgMCAyMDAgMjAwIj48Y2lyY2xlIGN4PSIxMDAiIGN5PSIxMDAiIHI9IjEwMCIgZmlsbD0iI2U2ZTZlNiIvPjxjaXJjbGUgY3g9IjEwMCIgY3k9IjgwIiByPSI0MCIgZmlsbD0iI2IzYjNiMyIvPjxwYXRoIGQ9Ik0xNjAgMTgwYzAtMzMuMTM3LTI2Ljg2My02MC02MC02MHMtNjAgMjYuODYzLTYwIDYwaDEyMHoiIGZpbGw9IiNiM2IzYjMiLz48L3N2Zz4='
                                         }" 
                                         alt="${
-                                            currentUser?.profile?.username ||
-                                            'Kullanıcı'
+                                            userProfile.username || 'Kullanıcı'
                                         }"
                                         class="user-avatar"
                                     >
                                     <div>
                                         <div class="username">@${
-                                            currentUser?.profile?.username ||
-                                            'kullanici'
+                                            userProfile.username || 'kullanici'
                                         }</div>
                                         <div style="color: var(--text-secondary); font-size: 14px;">
-                                            ${
-                                                currentUser?.profile
-                                                    ?.fullName || ''
-                                            }
+                                            ${userProfile.fullName || ''}
                                         </div>
                                     </div>
                                 </div>
@@ -529,54 +577,60 @@ class HomePage {
                                     <h3 style="margin: 0; color: var(--text-primary);">Senin İçin Öneriler</h3>
                                 </div>
                                 
-                                <div style="padding: 15px;">
-                                    <div style="display: flex; align-items: center; margin-bottom: 15px;">
-                                        <img src="https://via.placeholder.com/150" alt="Kullanıcı" class="user-avatar" style="width: 32px; height: 32px; margin-right: 10px;">
-                                        <div style="flex: 1;">
-                                            <div class="username">@kullanici1</div>
-                                        </div>
-                                        <button style="
-                                            background: none; 
-                                            border: none; 
-                                            color: var(--primary-color);
-                                            font-weight: 600;
-                                            cursor: pointer;
-                                        ">
-                                            Takip Et
-                                        </button>
-                                    </div>
-                                    
-                                    <div style="display: flex; align-items: center; margin-bottom: 15px;">
-                                        <img src="https://via.placeholder.com/150" alt="Kullanıcı" class="user-avatar" style="width: 32px; height: 32px; margin-right: 10px;">
-                                        <div style="flex: 1;">
-                                            <div class="username">@kullanici2</div>
-                                        </div>
-                                        <button style="
-                                            background: none; 
-                                            border: none; 
-                                            color: var(--primary-color);
-                                            font-weight: 600;
-                                            cursor: pointer;
-                                        ">
-                                            Takip Et
-                                        </button>
-                                    </div>
-                                    
-                                    <div style="display: flex; align-items: center;">
-                                        <img src="https://via.placeholder.com/150" alt="Kullanıcı" class="user-avatar" style="width: 32px; height: 32px; margin-right: 10px;">
-                                        <div style="flex: 1;">
-                                            <div class="username">@kullanici3</div>
-                                        </div>
-                                        <button style="
-                                            background: none; 
-                                            border: none; 
-                                            color: var(--primary-color);
-                                            font-weight: 600;
-                                            cursor: pointer;
-                                        ">
-                                            Takip Et
-                                        </button>
-                                    </div>
+                                <div style="padding: 15px;" id="suggested-users-container">
+                                    ${
+                                        suggestedUsers.length > 0
+                                            ? suggestedUsers
+                                                  .map(
+                                                      (user) => `
+                                                <div style="display: flex; align-items: center; margin-bottom: 15px;">
+                                                    <img src="${
+                                                        user.profilePicture ||
+                                                        user.profileImage ||
+                                                        'data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHZpZXdCb3g9IjAgMCAyMDAgMjAwIj48Y2lyY2xlIGN4PSIxMDAiIGN5PSIxMDAiIHI9IjEwMCIgZmlsbD0iI2U2ZTZlNiIvPjxjaXJjbGUgY3g9IjEwMCIgY3k9IjgwIiByPSI0MCIgZmlsbD0iI2IzYjNiMyIvPjxwYXRoIGQ9Ik0xNjAgMTgwYzAtMzMuMTM3LTI2Ljg2My02MC02MC02MHMtNjAgMjYuODYzLTYwIDYwaDEyMHoiIGZpbGw9IiNiM2IzYjMiLz48L3N2Zz4='
+                                                    }" 
+                                                         alt="${
+                                                             user.username ||
+                                                             'Kullanıcı'
+                                                         }" 
+                                                         class="user-avatar" 
+                                                         style="width: 32px; height: 32px; margin-right: 10px;">
+                                                    <div style="flex: 1;">
+                                                        <div class="username">@${
+                                                            user.username
+                                                        }</div>
+                                                        <div style="color: var(--text-secondary); font-size: 12px;">${
+                                                            user.fullName || ''
+                                                        }</div>
+                                                    </div>
+                                                    <button 
+                                                        class="follow-suggestion-btn" 
+                                                        data-user-id="${
+                                                            user.uid
+                                                        }" 
+                                                        data-username="${
+                                                            user.username
+                                                        }"
+                                                        style="
+                                                            background: none; 
+                                                            border: none; 
+                                                            color: var(--primary-color);
+                                                            font-weight: 600;
+                                                            cursor: pointer;
+                                                        "
+                                                    >
+                                                        Takip Et
+                                                    </button>
+                                                </div>
+                                            `
+                                                  )
+                                                  .join('')
+                                            : `
+                                                <div style="text-align: center; padding: 10px; color: var(--text-secondary);">
+                                                    Öneri bulunmuyor
+                                                </div>
+                                            `
+                                    }
                                 </div>
                             </div>
                         </div>
@@ -591,8 +645,25 @@ class HomePage {
             this.loadPosts();
         } catch (error) {
             console.error('HomePage render error:', error);
+            // Hata durumunda kullanıcıyı bilgilendir
+            const appContainer = document.getElementById('app');
+            if (appContainer) {
+                appContainer.innerHTML = `
+                    <div style="text-align: center; padding: 50px; color: red;">
+                        <h2>Sayfa yüklenirken bir hata oluştu</h2>
+                        <p>${error.message}</p>
+                        <button onclick="window.location.reload()">Yeniden Dene</button>
+                    </div>
+                `;
+            }
         }
     }
+
+    // Kaydırma algılama ve yeni gönderileri yükleme için değişkenler
+    static lastVisiblePost = null;
+    static isLoading = false;
+    static allPostsLoaded = false;
+    static postsPerPage = 5; // İlk yüklemede gösterilecek gönderi sayısı
 
     static async setupEventListeners() {
         console.log("Event listener'lar ayarlanıyor");
@@ -667,6 +738,7 @@ class HomePage {
             }
 
             try {
+                // SearchService'i kullanarak kullanıcı ara
                 const users = await SearchService.searchUsers(query);
 
                 if (users.length === 0) {
@@ -678,8 +750,20 @@ class HomePage {
                         <div class="search-result-item" data-username="${
                             user.username
                         }">
-                            <strong>@${user.username}</strong>
-                            <div>${user.fullName || ''}</div>
+                            <img src="${
+                                user.profilePicture ||
+                                user.profileImage ||
+                                'data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHZpZXdCb3g9IjAgMCAyMDAgMjAwIj48Y2lyY2xlIGN4PSIxMDAiIGN5PSIxMDAiIHI9IjEwMCIgZmlsbD0iI2U2ZTZlNiIvPjxjaXJjbGUgY3g9IjEwMCIgY3k9IjgwIiByPSI0MCIgZmlsbD0iI2IzYjNiMyIvPjxwYXRoIGQ9Ik0xNjAgMTgwYzAtMzMuMTM3LTI2Ljg2My02MC02MC02MHMtNjAgMjYuODYzLTYwIDYwaDEyMHoiIGZpbGw9IiNiM2IzYjMiLz48L3N2Zz4='
+                            }" 
+                                 alt="${
+                                     user.username
+                                 }" style="width: 40px; height: 40px; border-radius: 50%; margin-right: 10px;">
+                            <div>
+                                <div><strong>@${user.username}</strong></div>
+                                <div style="font-size: 12px; color: var(--text-secondary);">${
+                                    user.fullName || ''
+                                }</div>
+                            </div>
                         </div>
                     `
                         )
@@ -748,60 +832,427 @@ class HomePage {
                 this.loadNotifications(notificationsList, notificationCount);
             }, 60000); // Her dakika kontrol et
         }
+
+        // Öneri kullanıcılarını takip et
+        document
+            .querySelectorAll('.follow-suggestion-btn')
+            .forEach((button) => {
+                button.addEventListener('click', async (e) => {
+                    const username = e.target.dataset.username;
+                    const userId = e.target.dataset.userId;
+
+                    try {
+                        const result = await this.followUser(username);
+
+                        if (result === 'pending') {
+                            e.target.textContent = 'İstek Gönderildi';
+                            e.target.disabled = true;
+                            e.target.style.color = 'var(--text-secondary)';
+                        } else if (result === true) {
+                            e.target.textContent = 'Takip Ediliyor';
+                            e.target.disabled = true;
+                            e.target.style.color = 'var(--success-color)';
+                        }
+                    } catch (error) {
+                        console.error('Takip etme hatası:', error);
+                        alert('Takip etme işlemi sırasında bir hata oluştu');
+                    }
+                });
+            });
+
+        // Yeni gönderi oluşturma butonu
+        const newPostBtn = document.querySelector('.new-post-btn');
+        if (newPostBtn) {
+            newPostBtn.addEventListener('click', () => {
+                this.openPostCreationModal();
+            });
+        }
+
+        // Sonsuz kaydırma için scroll event listener ekle
+        window.addEventListener('scroll', () => {
+            if (this.isLoading || this.allPostsLoaded) return;
+
+            const { scrollTop, scrollHeight, clientHeight } =
+                document.documentElement;
+
+            // Sayfa sonuna yaklaştığında yeni gönderiler yükle (sayfa sonuna 200px kala)
+            if (scrollTop + clientHeight >= scrollHeight - 200) {
+                this.loadMorePosts();
+            }
+        });
     }
 
-    static async loadPosts() {
+    static async followUser(username) {
+        try {
+            // FollowService'i dinamik import et
+            const { FollowService } = await import(
+                '../services/follow-service.js'
+            );
+            return await FollowService.followUser(username);
+        } catch (error) {
+            console.error('Takip etme hatası:', error);
+            throw error;
+        }
+    }
+
+    static async loadPosts(isInitialLoad = true) {
         console.log('Gönderiler yükleniyor');
         const postsContainer = document.getElementById('posts-container');
+        const loadMoreContainer = document.getElementById(
+            'load-more-container'
+        );
+        const initialLoading = document.getElementById('initial-loading');
+
+        if (this.isLoading) return;
 
         try {
-            const posts = await PostService.getFollowedUsersPosts();
+            this.isLoading = true;
+
+            if (!isInitialLoad) {
+                loadMoreContainer.style.display = 'block';
+            }
+
+            const posts = await PostService.getFollowedUsersPosts(
+                this.postsPerPage,
+                this.lastVisiblePost
+            );
+
+            // İlk yüklemede yükleniyor göstergesini kaldır
+            if (isInitialLoad && initialLoading) {
+                postsContainer.removeChild(initialLoading);
+            }
 
             if (posts.length === 0) {
-                postsContainer.innerHTML = `
-                    <div class="empty-state">
-                        <h3>Henüz gönderi yok</h3>
-                        <p>Takip ettiğiniz kişilerin gönderileri burada görünecek</p>
-                    </div>
+                if (isInitialLoad) {
+                    postsContainer.innerHTML = `
+                        <div class="empty-state">
+                            <h3>Henüz gönderi yok</h3>
+                            <p>Takip ettiğiniz kişilerin gönderileri burada görünecek</p>
+                        </div>
+                    `;
+                }
+
+                this.allPostsLoaded = true;
+                loadMoreContainer.innerHTML = `
+                    <p style="color: var(--text-secondary);">Tüm gönderiler yüklendi</p>
                 `;
                 return;
             }
 
-            postsContainer.innerHTML = posts
+            // Son yüklenen gönderiyi kaydet (sonraki yükleme için)
+            this.lastVisiblePost = posts[posts.length - 1].id;
+
+            const postsHTML = posts
                 .map(
                     (post) => `
                 <div class="post-card" data-post-id="${post.id}">
                     <div class="post-header">
                         <img src="${
-                            post.profileImage || '/default-avatar.png'
-                        }" alt="${
-                        post.username
-                    }" width="40" height="40" style="border-radius: 50%;">
-                        <strong>${post.username}</strong>
+                            post.profileImage ||
+                            post.profilePicture ||
+                            'data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHZpZXdCb3g9IjAgMCAyMDAgMjAwIj48Y2lyY2xlIGN4PSIxMDAiIGN5PSIxMDAiIHI9IjEwMCIgZmlsbD0iI2U2ZTZlNiIvPjxjaXJjbGUgY3g9IjEwMCIgY3k9IjgwIiByPSI0MCIgZmlsbD0iI2IzYjNiMyIvPjxwYXRoIGQ9Ik0xNjAgMTgwYzAtMzMuMTM3LTI2Ljg2My02MC02MC02MHMtNjAgMjYuODYzLTYwIDYwaDEyMHoiIGZpbGw9IiNiM2IzYjMiLz48L3N2Zz4='
+                        }" 
+                             alt="${post.username}" 
+                             class="user-avatar"
+                             style="cursor: pointer"
+                             onclick="window.location.href='/profile/${
+                                 post.username
+                             }'">
+                        <strong class="username" style="cursor: pointer" 
+                             onclick="window.location.href='/profile/${
+                                 post.username
+                             }'">${post.username}</strong>
+                        <span style="margin-left: auto; font-size: 12px; color: var(--text-secondary);">
+                            ${this.formatPostTime(post.createdAt)}
+                        </span>
                     </div>
                     <img class="post-image" src="${
                         post.imageUrl
                     }" alt="Post image">
                     <div class="post-actions">
-                        <button class="like-btn">❤️ ${post.likes || 0}</button>
-                        <button class="comment-btn">💬 Yorum</button>
+                        <div class="action-icons">
+                            <button class="like-button" data-post-id="${
+                                post.id
+                            }" style="background:none; border:none; cursor:pointer; display:flex; align-items:center; padding:0;">
+                                <i class="fas fa-heart" style="font-size: 18px;"></i> <span style="margin-left:5px;">${
+                                    post.likes || 0
+                                }</span>
+                            </button>
+                            <button class="comment-button" data-post-id="${
+                                post.id
+                            }" style="background:none; border:none; cursor:pointer; display:flex; align-items:center; padding:0; margin-left:15px;">
+                                <i class="fas fa-comment" style="font-size: 18px;"></i> <span style="margin-left:5px;">Yorum</span>
+                            </button>
+                        </div>
+                        <div class="post-caption">
+                            <strong>${post.username}</strong> ${
+                        post.caption || ''
+                    }
+                        </div>
                     </div>
-                    <div class="post-caption">
-                        <strong>${post.username}</strong> ${post.caption || ''}
+                    <div class="post-add-comment">
+                        <input type="text" placeholder="Yorum ekle..." id="comment-input-${
+                            post.id
+                        }">
+                        <button class="send-comment-btn" data-post-id="${
+                            post.id
+                        }">Gönder</button>
                     </div>
                 </div>
             `
                 )
                 .join('');
+
+            if (isInitialLoad) {
+                postsContainer.innerHTML = postsHTML;
+            } else {
+                postsContainer.insertAdjacentHTML('beforeend', postsHTML);
+            }
+
+            // Post etkileşim butonlarına event listener ekle
+            this.setupPostInteractions();
+
+            // Yükleme tamamlandı
+            this.isLoading = false;
+            loadMoreContainer.style.display = 'none';
         } catch (error) {
             console.error('Gönderiler yüklenirken hata:', error);
-            postsContainer.innerHTML = `
-                <div class="error-state">
-                    <h3>Gönderiler yüklenemedi</h3>
-                    <p>Lütfen daha sonra tekrar deneyin</p>
-                </div>
-            `;
+
+            if (isInitialLoad) {
+                postsContainer.innerHTML = `
+                    <div class="error-state">
+                        <h3>Gönderiler yüklenemedi</h3>
+                        <p>Lütfen daha sonra tekrar deneyin</p>
+                        <button onclick="HomePage.loadPosts()" class="btn btn-primary" style="margin-top: 15px;">Tekrar Dene</button>
+                    </div>
+                `;
+            } else {
+                loadMoreContainer.innerHTML = `
+                    <button onclick="HomePage.loadMorePosts()" class="btn btn-primary">Tekrar Dene</button>
+                `;
+            }
+
+            this.isLoading = false;
         }
+    }
+
+    static loadMorePosts() {
+        if (!this.isLoading && !this.allPostsLoaded) {
+            this.loadPosts(false);
+        }
+    }
+
+    static setupPostInteractions() {
+        // Like butonları için event listener
+        document.querySelectorAll('.like-button').forEach((button) => {
+            button.addEventListener('click', async (e) => {
+                const postId = e.currentTarget.dataset.postId;
+                try {
+                    await PostService.likePost(postId);
+                    const currentLikes = parseInt(
+                        e.currentTarget.textContent.trim().split(' ')[1] || 0
+                    );
+                    e.currentTarget.innerHTML = `<i class="fas fa-heart" style="color: var (--secondary-color);"></i> ${
+                        currentLikes + 1
+                    }`;
+                } catch (error) {
+                    console.error('Beğenme hatası:', error);
+                }
+            });
+        });
+
+        // Yorum gönderme butonları için event listener
+        document.querySelectorAll('.send-comment-btn').forEach((button) => {
+            button.addEventListener('click', async (e) => {
+                const postId = e.currentTarget.dataset.postId;
+                const inputElement = document.getElementById(
+                    `comment-input-${postId}`
+                );
+                const commentText = inputElement.value.trim();
+
+                if (commentText) {
+                    try {
+                        await PostService.addComment(postId, commentText);
+                        inputElement.value = '';
+                        alert('Yorumunuz eklendi!');
+                    } catch (error) {
+                        console.error('Yorum gönderme hatası:', error);
+                    }
+                }
+            });
+        });
+    }
+
+    // Yeni gönderi oluşturma modalını aç
+    static async openPostCreationModal() {
+        // Modal HTML'ini oluştur
+        const modalHTML = `
+            <div id="post-create-modal" style="
+                position: fixed;
+                top: 0;
+                left: 0;
+                right: 0;
+                bottom: 0;
+                background-color: rgba(0, 0, 0, 0.7);
+                display: flex;
+                justify-content: center;
+                align-items: center;
+                z-index: 1000;
+            ">
+                <div style="
+                    background-color: white;
+                    border-radius: 10px;
+                    padding: 20px;
+                    width: 90%;
+                    max-width: 500px;
+                    box-shadow: 0 5px 15px rgba(0,0,0,0.3);
+                ">
+                    <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px;">
+                        <h2 style="margin: 0; font-size: 20px;">Yeni Gönderi Oluştur</h2>
+                        <button id="close-modal" style="background: none; border: none; font-size: 24px; cursor: pointer;">&times;</button>
+                    </div>
+                    
+                    <div id="upload-area" style="
+                        border: 2px dashed #ccc;
+                        padding: 40px 20px;
+                        text-align: center;
+                        margin-bottom: 20px;
+                        cursor: pointer;
+                    ">
+                        <i class="fas fa-cloud-upload-alt" style="font-size: 48px; color: #5563de; margin-bottom: 15px;"></i>
+                        <p>Gönderi için fotoğraf yükle</p>
+                        <input type="file" id="post-image-input" accept="image/*" style="display: none;">
+                    </div>
+                    
+                    <img id="image-preview" style="width: 100%; max-height: 300px; object-fit: contain; display: none; margin-bottom: 20px;">
+                    
+                    <div>
+                        <label for="post-caption" style="display: block; margin-bottom: 8px; font-weight: 600;">Açıklama</label>
+                        <textarea id="post-caption" style="
+                            width: 100%;
+                            padding: 10px;
+                            border: 1px solid #ccc;
+                            border-radius: 5px;
+                            height: 100px;
+                            resize: vertical;
+                        " placeholder="Gönderiniz için açıklama yazın..."></textarea>
+                    </div>
+                    
+                    <div id="post-error" style="color: red; margin-top: 10px; display: none;"></div>
+                    
+                    <button id="share-post-btn" style="
+                        background-color: var(--primary-color);
+                        color: white;
+                        border: none;
+                        padding: 10px 20px;
+                        border-radius: 5px;
+                        margin-top: 20px;
+                        cursor: pointer;
+                        font-weight: 600;
+                        width: 100%;
+                    " disabled>Paylaş</button>
+                </div>
+            </div>
+        `;
+
+        document.body.insertAdjacentHTML('beforeend', modalHTML);
+
+        // Event listeners ekle
+        const closeModalBtn = document.getElementById('close-modal');
+        const uploadArea = document.getElementById('upload-area');
+        const postImageInput = document.getElementById('post-image-input');
+        const imagePreview = document.getElementById('image-preview');
+        const sharePostBtn = document.getElementById('share-post-btn');
+        const postCaption = document.getElementById('post-caption');
+        const postError = document.getElementById('post-error');
+        const modal = document.getElementById('post-create-modal');
+
+        let selectedImage = null;
+
+        closeModalBtn.addEventListener('click', () => {
+            modal.remove();
+        });
+
+        uploadArea.addEventListener('click', () => {
+            postImageInput.click();
+        });
+
+        postImageInput.addEventListener('change', (e) => {
+            const file = e.target.files[0];
+            if (file) {
+                // Görüntü dosyası kontrolü
+                if (!file.type.startsWith('image/')) {
+                    postError.textContent = 'Lütfen bir görüntü dosyası seçin';
+                    postError.style.display = 'block';
+                    return;
+                }
+
+                selectedImage = file;
+                const reader = new FileReader();
+
+                reader.onload = function (event) {
+                    imagePreview.src = event.target.result;
+                    imagePreview.style.display = 'block';
+                    uploadArea.style.display = 'none';
+                    sharePostBtn.disabled = false;
+                };
+
+                reader.readAsDataURL(file);
+                postError.style.display = 'none';
+            }
+        });
+
+        sharePostBtn.addEventListener('click', async () => {
+            if (!selectedImage) {
+                postError.textContent = 'Lütfen bir görüntü seçin';
+                postError.style.display = 'block';
+                return;
+            }
+
+            try {
+                sharePostBtn.disabled = true;
+                sharePostBtn.textContent = 'Paylaşılıyor...';
+
+                // PostService'i kullanarak gönderiyi yükle
+                await PostService.uploadPost(selectedImage, postCaption.value);
+
+                // Başarıyla paylaşıldıysa modalı kapat
+                modal.remove();
+
+                // Sayfayı yenile ya da gönderiyi dinamik olarak ekleyebiliriz
+                // Burada basitlik için sayfayı yeniliyoruz
+                window.location.reload();
+            } catch (error) {
+                console.error('Gönderi paylaşma hatası:', error);
+                postError.textContent = 'Gönderi paylaşılırken bir hata oluştu';
+                postError.style.display = 'block';
+                sharePostBtn.disabled = false;
+                sharePostBtn.textContent = 'Paylaş';
+            }
+        });
+    }
+
+    static formatPostTime(timestamp) {
+        if (!timestamp) return '';
+
+        // Firestore timestamp'i Date objesine çevir
+        const date = timestamp.toDate
+            ? timestamp.toDate()
+            : new Date(timestamp);
+
+        const now = new Date();
+        const diffMs = now - date;
+        const diffSecs = Math.floor(diffMs / 1000);
+        const diffMins = Math.floor(diffSecs / 60);
+        const diffHours = Math.floor(diffMins / 60);
+        const diffDays = Math.floor(diffHours / 24);
+
+        if (diffSecs < 60) return 'Az önce';
+        if (diffMins < 60) return `${diffMins} dakika önce`;
+        if (diffHours < 24) return `${diffHours} saat önce`;
+        if (diffDays < 7) return `${diffDays} gün önce`;
+
+        return date.toLocaleDateString();
     }
 
     static async loadNotifications(
@@ -844,6 +1295,11 @@ class HomePage {
                     </div>
                 `;
                 return;
+            }
+
+            // Açılan bildirim panelindeki tüm bildirimleri okundu olarak işaretle
+            if (pendingCount > 0) {
+                await NotificationService.markAllAsRead(currentUser.uid);
             }
 
             notificationsList.innerHTML = notifications
@@ -917,6 +1373,27 @@ class HomePage {
                     `;
                     }
 
+                    if (
+                        notification.type === 'follow' &&
+                        notification.status === 'completed'
+                    ) {
+                        return `
+                        <div class="notification-item" data-id="${
+                            notification.id
+                        }">
+                            <div class="notification-content">
+                                <strong>${
+                                    notification.senderUsername ||
+                                    'Bir kullanıcı'
+                                }</strong> sizi takip etmeye başladı
+                            </div>
+                            <div class="notification-time">${this.formatNotificationTime(
+                                notification.createdAt
+                            )}</div>
+                        </div>
+                    `;
+                    }
+
                     return `
                     <div class="notification-item" data-id="${notification.id}">
                         <div class="notification-content">${
@@ -971,7 +1448,20 @@ class HomePage {
                     currentUser.uid,
                     senderId
                 );
-                alert('Takip isteği kabul edildi');
+
+                // Takip isteği kabul edildiğinde bildirim sayısını güncelle
+                const notificationCount =
+                    document.getElementById('notification-count');
+                const currentCount = parseInt(notificationCount.textContent);
+                if (currentCount > 0) {
+                    notificationCount.textContent = currentCount - 1;
+                    if (currentCount - 1 <= 0) {
+                        notificationCount.style.display = 'none';
+                    }
+                }
+
+                event.target.parentElement.innerHTML =
+                    '<span style="color: var(--success-color)">Kabul edildi</span>';
             } else if (action === 'reject') {
                 await NotificationService.handleFollowRequest(
                     notificationId,
@@ -979,15 +1469,21 @@ class HomePage {
                     currentUser.uid,
                     senderId
                 );
-                alert('Takip isteği reddedildi');
-            }
 
-            // Bildirimleri yenile
-            const notificationsList =
-                document.getElementById('notifications-list');
-            const notificationCount =
-                document.getElementById('notification-count');
-            await this.loadNotifications(notificationsList, notificationCount);
+                // Takip isteği reddedildiğinde bildirim sayısını güncelle
+                const notificationCount =
+                    document.getElementById('notification-count');
+                const currentCount = parseInt(notificationCount.textContent);
+                if (currentCount > 0) {
+                    notificationCount.textContent = currentCount - 1;
+                    if (currentCount - 1 <= 0) {
+                        notificationCount.style.display = 'none';
+                    }
+                }
+
+                event.target.parentElement.innerHTML =
+                    '<span style="color: var(--text-secondary)">Reddedildi</span>';
+            }
         } catch (error) {
             console.error('Bildirim eylemi işlenirken hata:', error);
             alert('İstek işlenirken bir hata oluştu');

@@ -122,50 +122,40 @@ export class AuthService {
         }
     }
 
+    /**
+     * Kullanıcı profil bilgilerini getirir
+     * @param {string} uid - Kullanıcı ID'si
+     * @returns {Promise<Object|null>} - Kullanıcı profil bilgileri veya null
+     */
     static async getUserProfile(uid) {
         try {
-            const userRef = doc(firestore, 'users', uid);
-            const userSnap = await getDoc(userRef);
+            console.log('getUserProfile called for uid:', uid);
 
-            if (userSnap.exists()) {
-                const userData = userSnap.data();
-
-                const isProfileComplete = userData.isProfileComplete === true;
-
-                return {
-                    ...userData,
-                    uid,
-                    fullName: userData.fullName || '',
-                    username: userData.username || '',
-                    profileImage:
-                        userData.profileImage || '/default-avatar.png',
-                    bio: userData.bio || '',
-                    isProfileComplete: isProfileComplete,
-                    mustCompleteProfile: !isProfileComplete,
-                };
-            } else {
-                return {
-                    uid,
-                    fullName: '',
-                    username: '',
-                    profileImage: '/default-avatar.png',
-                    bio: '',
-                    isProfileComplete: false,
-                    mustCompleteProfile: true,
-                };
+            if (!uid) {
+                console.error('getUserProfile: uid parametresi geçersiz');
+                return null;
             }
-        } catch (error) {
-            console.error('Profil alınamadı:', error);
+
+            const userDocRef = doc(firestore, 'users', uid);
+            const userDoc = await getDoc(userDocRef);
+
+            if (!userDoc.exists()) {
+                console.warn(
+                    `getUserProfile: ${uid} ID'li kullanıcı bulunamadı`
+                );
+                return null;
+            }
+
+            const userData = userDoc.data();
+            console.log('getUserProfile data fetched:', userData);
 
             return {
-                uid,
-                fullName: '',
-                username: '',
-                profileImage: '/default-avatar.png',
-                bio: '',
-                isProfileComplete: false,
-                mustCompleteProfile: true,
+                uid: uid,
+                ...userData,
             };
+        } catch (error) {
+            console.error('getUserProfile error:', error);
+            return null;
         }
     }
 

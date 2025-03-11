@@ -11,16 +11,24 @@ import {
     serverTimestamp,
     updateDoc,
     arrayUnion,
-    limit, // limit fonksiyonunu ekleyelim
+    limit as firestoreLimit, // Rename to avoid conflicts
+    Timestamp,
+    startAfter,
 } from 'firebase/firestore';
 import { ref, uploadBytes, getDownloadURL } from 'firebase/storage';
 import { AuthService } from './auth-service.js';
-import { FollowService } from './follow-service.js'; // FollowService'i import et
+import { FollowService } from './follow-service.js';
+import { NotificationService } from './notification-service.js';
 
 export class PostService {
+    /**
+     * Verilen kullanıcı adına ait gönderileri getirir
+     * @param {string} username - Gönderileri getirilecek kullanıcının kullanıcı adı
+     * @returns {Promise<Array>} - Kullanıcının gönderileri
+     */
     static async getUserPosts(username) {
         try {
-            // Önce kullanıcının uid'sini username'e göre bulalım
+            // Kullanıcının UID'sini bulmak için kullanıcı adıyla sorgula
             const usersRef = collection(firestore, 'users');
             const userQuery = query(
                 usersRef,
@@ -29,12 +37,12 @@ export class PostService {
             const userSnapshot = await getDocs(userQuery);
 
             if (userSnapshot.empty) {
-                throw new Error('Kullanıcı bulunamadı');
+                return [];
             }
 
             const userId = userSnapshot.docs[0].id;
 
-            // Şimdi bu uid'ye ait postları alalım
+            // Kullanıcının gönderilerini getir
             const postsRef = collection(firestore, 'posts');
             const postsQuery = query(
                 postsRef,
@@ -44,75 +52,78 @@ export class PostService {
 
             const postsSnapshot = await getDocs(postsQuery);
 
-            if (postsSnapshot.empty) {
-                console.log('Kullanıcıya ait gönderi bulunamadı');
-                return [];
-            }
+            return postsSnapshot.docs.map((doc) => {
+                const postData = doc.data();
 
-            const posts = [];
-            postsSnapshot.forEach((doc) => {
-                posts.push({
+                // Timestamp'i işlenebilir formata dönüştür
+                const createdAt = postData.createdAt
+                    ? postData.createdAt.toDate()
+                    : new Date();
+
+                return {
                     id: doc.id,
-                    ...doc.data(),
-                    createdAt: doc.data().createdAt?.toDate(),
-                });
+                    ...postData,
+                    createdAt,
+                    username: username,
+                };
             });
-
-            console.log('Bulunan gönderiler:', posts);
-            return posts;
         } catch (error) {
-            console.error('Gönderiler alınırken hata:', error);
-            throw error;
+            console.error('Kullanıcı gönderileri alınırken hata:', error);
+            return [];
         }
     }
 
+    /**
+     * Yeni gönderi yükler
+     * @param {File} imageFile - Yüklenecek görsel dosyası
+     * @param {string} caption - Gönderi açıklaması
+     * @returns {Promise<Object>} - Yüklenen gönderinin bilgileri
+     */
     static async uploadPost(imageFile, caption) {
         try {
-            const currentUser = await AuthService.getCurrentUser();
+            const currentUser = AuthService.getCurrentUser();
             if (!currentUser) {
-                throw new Error('Kullanıcı girişi yapılmamış');
+                throw new Error('Kullanıcı oturumu açık değil');
             }
 
+            // Kullanıcı profilini getir
             const userProfile = await AuthService.getUserProfile(
                 currentUser.uid
             );
+            if (!userProfile) {
+                throw new Error('Kullanıcı profili bulunamadı');
+            }
 
-            // Resmi Storage'a yükle
-            const imageRef = ref(
+            // Görseli storage'a yükle
+            const storageRef = ref(
                 storage,
                 `posts/${currentUser.uid}/${Date.now()}_${imageFile.name}`
             );
-            const uploadResult = await uploadBytes(imageRef, imageFile);
+            const uploadResult = await uploadBytes(storageRef, imageFile);
             const imageUrl = await getDownloadURL(uploadResult.ref);
 
-            // Post bilgilerini Firestore'a kaydet
+            // Gönderi verilerini oluştur
             const postData = {
                 userId: currentUser.uid,
-                username: userProfile.username,
-                profileImage: userProfile.profileImage || '/default-avatar.png',
-                imageUrl,
-                caption,
+                imageUrl: imageUrl,
+                caption: caption || '',
                 likes: 0,
+                likesArray: [],
                 comments: [],
                 createdAt: serverTimestamp(),
             };
 
-            // Posts koleksiyonuna ekle
-            const postsRef = collection(firestore, 'posts');
-            const docRef = await addDoc(postsRef, postData);
-
-            // Kullanıcının posts dizisine post ID'sini ekle
-            const userRef = doc(firestore, 'users', currentUser.uid);
-            await updateDoc(userRef, {
-                posts: arrayUnion(docRef.id),
-            });
-
-            console.log('Yeni post yüklendi:', docRef.id);
+            // Firestore'a gönderi ekle
+            const docRef = await addDoc(
+                collection(firestore, 'posts'),
+                postData
+            );
 
             return {
                 id: docRef.id,
                 ...postData,
-                createdAt: new Date(),
+                imageUrl,
+                username: userProfile.username,
             };
         } catch (error) {
             console.error('Gönderi yükleme hatası:', error);
@@ -120,113 +131,119 @@ export class PostService {
         }
     }
 
-    static async getFollowedUsersPosts() {
+    /**
+     * Takip edilen kullanıcıların ve kendi gönderilerini getirir
+     * @param {number} limitCount - Getirilecek gönderi sayısı
+     * @param {string} startAfterPostId - Bu ID'den sonraki gönderileri getir
+     * @returns {Promise<Array>} - Gönderilerin listesi
+     */
+    static async getFollowedUsersPosts(
+        limitCount = 5,
+        startAfterPostId = null
+    ) {
         try {
             const currentUser = AuthService.getCurrentUser();
-            console.log('Current user:', currentUser?.uid);
-
             if (!currentUser) {
                 throw new Error('Kullanıcı oturumu açık değil');
             }
 
-            // İlgili servisi import et
-            const FollowService = await import('./follow-service.js').then(
-                (module) => module.default
-            );
-
             // Kullanıcının takip ettiği kişilerin listesini al
-            const followingUsers = await FollowService.getFollowing(
-                currentUser.uid
-            );
-            console.log('Takip edilen kullanıcılar:', followingUsers);
+            const following = await FollowService.getFollowing(currentUser.uid);
 
-            // Takip edilen kullanıcılar ve kendisi
-            const usersToFetch = [...followingUsers, currentUser.uid];
-            console.log('Gönderi aranacak kullanıcılar:', usersToFetch);
+            // Kullanıcı ID'lerini belirle (takip edilenler + kendisi)
+            const userIds =
+                following.length > 0
+                    ? [...following, currentUser.uid]
+                    : [currentUser.uid];
 
-            const posts = [];
+            // Base query
+            let postsRef = collection(firestore, 'posts');
+            let q = null;
 
-            // Her bir kullanıcı için gönderileri al
-            for (const userId of usersToFetch) {
+            // Pagination için startAfter query
+            if (startAfterPostId) {
                 try {
-                    console.log(
-                        `${userId} kullanıcısının gönderileri getiriliyor...`
+                    const startAfterDoc = await getDoc(
+                        doc(firestore, 'posts', startAfterPostId)
                     );
-                    const userPosts = await this.getUserPostsById(userId);
-                    posts.push(...userPosts);
+
+                    if (startAfterDoc.exists()) {
+                        q = query(
+                            postsRef,
+                            where('userId', 'in', userIds),
+                            orderBy('createdAt', 'desc'),
+                            startAfter(startAfterDoc),
+                            firestoreLimit(limitCount) // Use renamed import
+                        );
+                    } else {
+                        // Eğer başlangıç dokümanı bulunamadıysa normal sorgu yap
+                        q = query(
+                            postsRef,
+                            where('userId', 'in', userIds),
+                            orderBy('createdAt', 'desc'),
+                            firestoreLimit(limitCount) // Use renamed import
+                        );
+                    }
                 } catch (error) {
-                    console.warn(
-                        `${userId} kullanıcısının gönderileri alınırken hata:`,
+                    console.error(
+                        'Pagination hatası, normal query kullanılacak:',
                         error
                     );
+                    q = query(
+                        postsRef,
+                        where('userId', 'in', userIds),
+                        orderBy('createdAt', 'desc'),
+                        firestoreLimit(limitCount) // Use renamed import
+                    );
                 }
+            } else {
+                // İlk yüklemede pagination olmadan query
+                q = query(
+                    postsRef,
+                    where('userId', 'in', userIds),
+                    orderBy('createdAt', 'desc'),
+                    firestoreLimit(limitCount) // Use renamed import
+                );
             }
 
-            // Gönderileri tarihe göre sırala (en yeniden en eskiye)
-            posts.sort((a, b) => b.createdAt - a.createdAt);
+            const querySnapshot = await getDocs(q);
 
-            console.log('Toplam bulunan gönderi sayısı:', posts.length);
+            // Sonuçları işle ve kullanıcı bilgilerini ekle
+            const posts = [];
+            for (const docSnapshot of querySnapshot.docs) {
+                const postData = docSnapshot.data();
+
+                // Kullanıcı profil bilgilerini al
+                const userRef = doc(firestore, 'users', postData.userId);
+                const userDoc = await getDoc(userRef);
+                const userData = userDoc.exists() ? userDoc.data() : {};
+
+                posts.push({
+                    id: docSnapshot.id,
+                    ...postData,
+                    username: userData.username || 'Kullanıcı',
+                    profileImage:
+                        userData.profilePicture ||
+                        userData.profileImage ||
+                        'data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHZpZXdCb3g9IjAgMCAyMDAgMjAwIj48Y2lyY2xlIGN4PSIxMDAiIGN5PSIxMDAiIHI9IjEwMCIgZmlsbD0iI2U2ZTZlNiIvPjxjaXJjbGUgY3g9IjEwMCIgY3k9IjgwIiByPSI0MCIgZmlsbD0iI2IzYjNiMyIvPjxwYXRoIGQ9Ik0xNjAgMTgwYzAtMzMuMTM3LTI2Ljg2My02MC02MC02MHMtNjAgMjYuODYzLTYwIDYwaDEyMHoiIGZpbGw9IiNiM2IzYjMiLz48L3N2Zz4=',
+                    createdAt: postData.createdAt
+                        ? postData.createdAt.toDate()
+                        : new Date(),
+                });
+            }
+
             return posts;
         } catch (error) {
-            console.error('Gönderiler alınırken hata:', error);
-            console.error('Hata detayı:', error);
+            console.error('Gönderiler yüklenirken hata:', error);
             return [];
         }
     }
 
-    // Tarih formatlama yardımcı fonksiyonu
-    static formatDate(date) {
-        try {
-            const now = new Date();
-            const diff = now - date;
-            const seconds = Math.floor(diff / 1000);
-            const minutes = Math.floor(seconds / 60);
-            const hours = Math.floor(minutes / 60);
-            const days = Math.floor(hours / 24);
-
-            if (days > 7) {
-                return date.toLocaleDateString();
-            } else if (days > 0) {
-                return `${days} gün önce`;
-            } else if (hours > 0) {
-                return `${hours} saat önce`;
-            } else if (minutes > 0) {
-                return `${minutes} dakika önce`;
-            } else {
-                return 'Az önce';
-            }
-        } catch (error) {
-            console.error('Tarih formatlama hatası:', error);
-            return '';
-        }
-    }
-
-    static async getPostById(postId) {
-        try {
-            const postRef = doc(firestore, 'posts', postId);
-            const postSnap = await getDoc(postRef);
-
-            if (!postSnap.exists()) {
-                throw new Error('Gönderi bulunamadı');
-            }
-
-            const postData = postSnap.data();
-            const userRef = doc(firestore, 'users', postData.userId);
-            const userSnap = await getDoc(userRef);
-            const userData = userSnap.data();
-
-            return {
-                id: postSnap.id,
-                ...postData,
-                username: userData.username,
-                profileImage: userData.profileImage,
-            };
-        } catch (error) {
-            console.error('Gönderi detayları alınırken hata:', error);
-            throw error;
-        }
-    }
-
+    /**
+     * Gönderiyi beğen
+     * @param {string} postId - Beğenilecek gönderinin ID'si
+     * @returns {Promise<boolean>} - İşlem başarılı mı
+     */
     static async likePost(postId) {
         try {
             const currentUser = AuthService.getCurrentUser();
@@ -234,80 +251,177 @@ export class PostService {
                 throw new Error('Kullanıcı oturumu açık değil');
             }
 
+            // Gönderiyi al
             const postRef = doc(firestore, 'posts', postId);
-            const postSnap = await getDoc(postRef);
+            const postDoc = await getDoc(postRef);
 
-            if (!postSnap.exists()) {
+            if (!postDoc.exists()) {
                 throw new Error('Gönderi bulunamadı');
             }
 
-            const postData = postSnap.data();
-            const updatedLikes = (postData.likes || 0) + 1;
+            const postData = postDoc.data();
+            const likesArray = postData.likesArray || [];
 
+            // Kullanıcı daha önce beğenmiş mi kontrol et
+            if (likesArray.includes(currentUser.uid)) {
+                return false;
+            }
+
+            // Beğeni sayısını artır
             await updateDoc(postRef, {
-                likes: updatedLikes,
+                likes: (postData.likes || 0) + 1,
+                likesArray: arrayUnion(currentUser.uid),
             });
 
-            return updatedLikes;
+            // Gönderinin sahibine bildirim gönder
+            if (postData.userId !== currentUser.uid) {
+                // Kullanıcı adını al
+                const userProfileDoc = await getDoc(
+                    doc(firestore, 'users', currentUser.uid)
+                );
+                const userProfile = userProfileDoc.exists()
+                    ? userProfileDoc.data()
+                    : {};
+
+                await NotificationService.createNotification({
+                    type: 'like',
+                    recipientId: postData.userId,
+                    senderUserId: currentUser.uid,
+                    senderUsername: userProfile.username || 'Bir kullanıcı',
+                    content: 'gönderinizi beğendi',
+                    postId: postId,
+                    createdAt: new Date(),
+                });
+            }
+
+            return true;
         } catch (error) {
-            console.error('Beğeni işlemi hatası:', error);
+            console.error('Gönderi beğenme hatası:', error);
             throw error;
         }
     }
 
-    static async addComment(postId, commentText) {
+    /**
+     * Gönderiye yorum ekle
+     * @param {string} postId - Yorum yapılacak gönderinin ID'si
+     * @param {string} text - Yorum metni
+     * @returns {Promise<Object>} - Yorum bilgileri
+     */
+    static async addComment(postId, text) {
         try {
             const currentUser = AuthService.getCurrentUser();
             if (!currentUser) {
                 throw new Error('Kullanıcı oturumu açık değil');
             }
 
-            const userRef = doc(firestore, 'users', currentUser.uid);
-            const userSnap = await getDoc(userRef);
-            const userData = userSnap.data();
+            // Kullanıcı profil bilgilerini al
+            const userProfileDoc = await getDoc(
+                doc(firestore, 'users', currentUser.uid)
+            );
+            const userProfile = userProfileDoc.exists()
+                ? userProfileDoc.data()
+                : {};
 
-            const postRef = doc(firestore, 'posts', postId);
-            const postSnap = await getDoc(postRef);
-
-            if (!postSnap.exists()) {
-                throw new Error('Gönderi bulunamadı');
-            }
-
-            const newComment = {
+            // Yorum nesnesini oluştur
+            const comment = {
                 userId: currentUser.uid,
-                username: userData.username,
-                text: commentText,
-                timestamp: new Date(),
+                username: userProfile.username || 'Kullanıcı',
+                text: text,
+                createdAt: new Date(),
             };
 
-            const postData = postSnap.data();
-            const updatedComments = [...(postData.comments || []), newComment];
-
+            // Gönderiyi güncelle
+            const postRef = doc(firestore, 'posts', postId);
             await updateDoc(postRef, {
-                comments: updatedComments,
+                comments: arrayUnion(comment),
             });
 
-            return newComment;
+            // Gönderi sahibini al
+            const postDoc = await getDoc(postRef);
+            if (postDoc.exists()) {
+                const postData = postDoc.data();
+
+                // Gönderinin sahibine bildirim gönder (kendi gönderisine yorum yapmadıysa)
+                if (postData.userId !== currentUser.uid) {
+                    await NotificationService.createNotification({
+                        type: 'comment',
+                        recipientId: postData.userId,
+                        senderUserId: currentUser.uid,
+                        senderUsername: userProfile.username || 'Bir kullanıcı',
+                        content: 'gönderinize yorum yaptı',
+                        postId: postId,
+                        createdAt: new Date(),
+                    });
+                }
+            }
+
+            return comment;
         } catch (error) {
             console.error('Yorum ekleme hatası:', error);
             throw error;
         }
     }
 
+    /**
+     * Gönderi ID'sine göre gönderi detaylarını getirir
+     * @param {string} postId - Gönderi ID'si
+     * @returns {Promise<Object|null>} - Gönderi bilgileri
+     */
+    static async getPostById(postId) {
+        try {
+            const postRef = doc(firestore, 'posts', postId);
+            const postDoc = await getDoc(postRef);
+
+            if (!postDoc.exists()) {
+                return null;
+            }
+
+            const postData = postDoc.data();
+
+            // Gönderi sahibinin kullanıcı bilgilerini al
+            const userRef = doc(firestore, 'users', postData.userId);
+            const userDoc = await getDoc(userRef);
+            const userData = userDoc.exists() ? userDoc.data() : {};
+
+            return {
+                id: postDoc.id,
+                ...postData,
+                username: userData.username || 'Kullanıcı',
+                profileImage:
+                    userData.profilePicture ||
+                    userData.profileImage ||
+                    'data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHZpZXdCb3g9IjAgMCAyMDAgMjAwIj48Y2lyY2xlIGN4PSIxMDAiIGN5PSIxMDAiIHI9IjEwMCIgZmlsbD0iI2U2ZTZlNiIvPjxjaXJjbGUgY3g9IjEwMCIgY3k9IjgwIiByPSI0MCIgZmlsbD0iI2IzYjNiMyIvPjxwYXRoIGQ9Ik0xNjAgMTgwYzAtMzMuMTM3LTI2Ljg2My02MC02MC02MHMtNjAgMjYuODYzLTYwIDYwaDEyMHoiIGZpbGw9IiNiM2IzYjMiLz48L3N2Zz4=',
+                createdAt: postData.createdAt
+                    ? postData.createdAt.toDate()
+                    : new Date(),
+            };
+        } catch (error) {
+            console.error('Gönderi bilgileri alınırken hata:', error);
+            return null;
+        }
+    }
+
+    /**
+     * Gönderi yorumlarını getirir
+     * @param {string} postId - Gönderi ID'si
+     * @returns {Promise<Array>} - Yorum listesi
+     */
     static async getPostComments(postId) {
         try {
             const postRef = doc(firestore, 'posts', postId);
-            const postSnap = await getDoc(postRef);
+            const postDoc = await getDoc(postRef);
 
-            if (!postSnap.exists()) {
-                throw new Error('Gönderi bulunamadı');
+            if (!postDoc.exists()) {
+                return [];
             }
 
-            const postData = postSnap.data();
+            const postData = postDoc.data();
             return postData.comments || [];
         } catch (error) {
-            console.error('Yorumları alma hatası:', error);
-            throw error;
+            console.error('Yorumlar alınırken hata:', error);
+            return [];
         }
     }
 }
+
+export default PostService;

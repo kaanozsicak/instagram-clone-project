@@ -1,67 +1,86 @@
-# Instagram Clone Projesi
+# 📸 Photogram - Instagram Clone
 
-## 🚧 GELİŞTİRME AŞAMASINDA 🚧
+Modern ve kullanıcı dostu bir sosyal medya uygulaması. Firebase tabanlı bu Instagram klonu, temel sosyal medya özelliklerini içerir.
 
-## Proje Açıklaması
+## 🌟 Özellikler
 
-Bu proje, modern web teknolojileri kullanılarak geliştirilmiş bir Instagram klonudur. Firebase altyapısını kullanarak gerçek zamanlı etkileşimler ve kullanıcı yönetimi sağlar. Projenin web sitesi güncelleme sırasında kapatılmaktadır. Eğer burada bir link görmüyorsanız, proje o sırada güncelleme aşamasındadır.
+-   🔐 Kullanıcı kimlik doğrulama (email/şifre, Google ve Facebook ile giriş)
+-   👤 Kullanıcı profilleri (özelleştirilebilir profil fotoğrafı, biyografi)
+-   📝 Gönderiler (fotoğraf paylaşımı ve açıklama ekleme)
+-   ❤️ Gönderileri beğenme ve yorum yapma
+-   🔍 Kullanıcı arama
+-   👥 Kullanıcıları takip etme
+-   🔒 Gizli profil özelliği (takipçiler dışındakilere kapalı)
+-   📱 Mobil uyumlu tasarım
 
-## Özellikler
+## 🚀 Teknolojiler
 
-✅ Kullanıcı Yönetimi
-
--   Email/şifre ile kayıt ve giriş
--   Profil oluşturma ve düzenleme
--   Profil fotoğrafı yükleme
-
-✅ Sosyal Özellikler
-
--   Kullanıcıları takip etme
--   Gizli hesap özelliği
--   Takip istekleri ve bildirimler
-
-✅ Gönderi Sistemi
-
--   Fotoğraf paylaşma
--   Beğeni ve yorum yapma
--   Gönderileri görüntüleme
-
-🚧 Geliştirme Aşamasındaki Özellikler
-
--   Hikaye sistemi
--   Direct mesajlaşma
--   Keşfet sayfası
--   Bildirim tercihleri
-
-## Kurulum
-
-### Ön Gereksinimler
-
--   Node.js
--   npm veya yarn
--   Firebase hesabı
-
-### Adımlar
-
-1. Projeyi klonlayın
-2. `npm install` ile bağımlılıkları yükleyin
-3. Firebase yapılandırmanızı ekleyin
-4. `npm run dev` ile geliştirme sunucusunu başlatın
-
-## Kullanılan Teknolojiler
-
--   Vite
--   Firebase
 -   JavaScript (ES6+)
--   HTML5
--   CSS3
+-   Firebase (Authentication, Firestore, Storage)
+-   HTML5 ve CSS3
+-   Vanilla JS (Framework kullanılmadı)
 
-## Geliştirme Ortamı
+## 🛠️ Kurulum
 
--   Node.js
--   npm
--   Visual Studio Code
+1. Repo'yu klonlayın
 
-## Lisans
+```bash
+git clone https://github.com/kullaniciadi/instagram-clone.git
+cd instagram-clone
+```
 
-MIT Lisansı
+2. Firebase projenizi oluşturun ve yapılandırma dosyanızı ekleyin:
+
+    - [Firebase Console](https://console.firebase.google.com/)'a gidin
+    - Yeni bir proje oluşturun
+    - Authentication, Firestore ve Storage servislerini etkinleştirin
+    - Proje ayarlarından web uygulaması ekleyin
+    - Firebase yapılandırma bilgilerini `src/services/firebase-config.js` dosyasına ekleyin
+
+3. Gerekli paketleri yükleyin:
+
+```bash
+npm install
+```
+
+4. Uygulamayı başlatın:
+
+```bash
+npm start
+```
+
+## 📄 Proje Yapısı
+
+📁 src/
+┣ 📁 components/ # UI bileşenleri
+┣ 📁 pages/ # Ana sayfa bileşenleri
+┣ 📁 services/ # Firebase ve diğer servisler
+┣ 📁 styles/ # CSS dosyaları
+┗ 📄 app.js # Ana uygulama
+
+📁 public/ # Statik dosyalar
+
+⚡ Performans İyileştirmeleri
+Sonsuz kaydırma ile gönderi yükleme
+Görüntü lazy-loading
+Firebase sınırlı sorgulama
+
+🔮 Gelecek Özellikler
+
+-   Hikaye özelliği
+-   Direkt mesaj (DM)
+-   Bildirimler
+-   Keşfet sayfası
+-   Hashtag ve konum etiketleme
+
+🤝 Katkıda Bulunma
+Katkılarınızı bekliyoruz! Lütfen:
+
+Bu repo'yu forklayın
+Yeni bir özellik dalı oluşturun (git checkout -b yeni-ozellik)
+Değişikliklerinizi commit edin (git commit -m 'Yeni özellik eklendi')
+Dalınızı push edin (git push origin yeni-ozellik)
+Pull Request açın
+
+📝 Lisans
+MIT
