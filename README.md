@@ -66,9 +66,10 @@ npm start
 📁 public/ # Statik dosyalar
 
 ⚡ Performans İyileştirmeleri
-Sonsuz kaydırma ile gönderi yükleme
-Görüntü lazy-loading
-Firebase sınırlı sorgulama
+
+-   Sonsuz kaydırma ile gönderi yükleme
+-   Görüntü lazy-loading
+-   Firebase sınırlı sorgulama
 
 🔮 Gelecek Özellikler
 
@@ -81,11 +82,11 @@ Firebase sınırlı sorgulama
 🤝 Katkıda Bulunma
 Katkılarınızı bekliyoruz! Lütfen:
 
-Bu repo'yu forklayın
-Yeni bir özellik dalı oluşturun (git checkout -b yeni-ozellik)
-Değişikliklerinizi commit edin (git commit -m 'Yeni özellik eklendi')
-Dalınızı push edin (git push origin yeni-ozellik)
-Pull Request açın
+-   Bu repo'yu forklayın
+-   Yeni bir özellik dalı oluşturun (git checkout -b yeni-ozellik)
+-   Değişikliklerinizi commit edin (git commit -m 'Yeni özellik eklendi')
+-   Dalınızı push edin (git push origin yeni-ozellik)
+-   Pull Request açın
 
 📝 Lisans
 MIT
