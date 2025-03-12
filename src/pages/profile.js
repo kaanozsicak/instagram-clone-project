@@ -404,7 +404,7 @@ class ProfilePage {
                     display: flex;
                     align-items: center;
                     padding: 14px;
-                    border-top: 1px solid var(--gray-200);
+                    border-top: 1px solid var (--gray-200);
                 }
 
                 .post-modal-add-comment input {
@@ -416,7 +416,7 @@ class ProfilePage {
                 }
                 .post-modal-add-comment button {
                     background: none;
-                    color: var(--primary-color);
+                    color: var (--primary-color);
                     font-weight: 600;
                     cursor: pointer;
                 }
@@ -486,14 +486,20 @@ class ProfilePage {
                 .posts-grid-container {
                     display: grid;
                     grid-template-columns: repeat(3, 1fr);
-                    gap: 4px;
+                    gap: 16px;
                     margin-top: 20px;
+                    max-width: 935px;
+                    margin-left: auto;
+                    margin-right: auto;
                 }
                 
                 .post-item {
                     position: relative;
                     width: 100%;
                     overflow: hidden;
+                    border-radius: 8px;
+                    box-shadow: var(--shadow-sm);
+                    transition: all 0.3s;
                 }
                 
                 .post-item-inner {
@@ -508,49 +514,47 @@ class ProfilePage {
                     width: 100%;
                     height: 100%;
                     object-fit: cover;
+                    transition: transform 0.3s ease;
                 }
                 
-                .post-item-overlay {
-                    position: absolute;
-                    top: 0;
-                    left: 0;
-                    right: 0;
-                    bottom: 0;
-                    background-color: rgba(0, 0, 0, 0.3);
-                    display: flex;
-                    align-items: center;
-                    justify-content: center;
-                    opacity: 0;
-                    transition: opacity 0.2s ease;
+                .post-item:hover {
+                    box-shadow: var(--shadow-md);
                 }
                 
-                .post-item:hover .post-item-overlay {
-                    opacity: 1;
+                .post-item:hover img {
+                    transform: scale(1.03);
                 }
                 
-                .post-item-stats {
-                    color: white;
-                    display: flex;
-                    gap: 20px;
-                    font-weight: 600;
-                }
-                
-                .post-item-stats span {
-                    display: flex;
-                    align-items: center;
-                    gap: 5px;
+                @media (min-width: 769px) {
+                    .posts-grid-container {
+                        grid-template-columns: repeat(3, minmax(280px, 1fr));
+                        gap: 16px;
+                    }
+                    
+                    .post-item-inner {
+                        height: 280px;
+                    }
                 }
                 
                 @media (max-width: 768px) {
                     .posts-grid-container {
-                        grid-template-columns: repeat(3, 1fr);
-                        gap: 2px;
+                        grid-template-columns: repeat(2, 1fr);
+                        gap: 8px;
+                    }
+                    
+                    .post-item-inner {
+                        height: 220px;
                     }
                 }
                 
                 @media (max-width: 480px) {
                     .posts-grid-container {
-                        grid-template-columns: repeat(2, 1fr);
+                        grid-template-columns: repeat(1, 1fr);
+                        gap: 12px;
+                    }
+                    
+                    .post-item-inner {
+                        height: 320px;
                     }
                 }
             </style>
@@ -967,15 +971,18 @@ class ProfilePage {
         const postsGrid = document.getElementById('posts-grid');
         if (postsGrid) {
             postsGrid.addEventListener('click', async (e) => {
+                const target = e.target;
                 const postItem = e.target.closest('.post-item');
-                if (postItem) {target;
-                    const postId = postItem.dataset.postId;target !== postsGrid) {
-                    if (postId) {et.parentElement;
-                        console.log('Gönderi açılıyor:', postId);
-                        await this.openPostModal(postId);
-                    } else {& target.dataset.postId) {
-                        console.warn('Post ID bulunamadı!');
-                    }his.openPostModal(postId);
+                if (postItem) {
+                    const postId = postItem.dataset.postId;
+                    if (target !== postsGrid) {
+                        if (postId) {
+                            console.log('Gönderi açılıyor:', postId);
+                            await this.openPostModal(postId);
+                        } else {
+                            console.warn('Post ID bulunamadı!');
+                        }
+                    }
                 }
             });
         } else {
@@ -1351,10 +1358,29 @@ class ProfilePage {
                 </div>
             `;
             
-            // Append modal to the body and add CSS
-            document.body.insertAdjacentHTML('beforeend', modalHtml);
-            const styleEl = document.createElement('style');
-            styleEl.textContent = `
+            // Modal'ı doğrudan document.body'ye ekle
+            const modalContainer = document.createElement('div');
+            modalContainer.innerHTML = modalHtml;
+            document.body.appendChild(modalContainer.firstElementChild);
+            
+            // Stil için yeni bir stil etiketi oluştur
+            const style = document.createElement('style');
+            style.id = 'post-modal-styles';
+            style.textContent = `
+                .modal {
+                    position: fixed;
+                    top: 0;
+                    left: 0;
+                    right: 0;
+                    bottom: 0;
+                    background: rgba(0,0,0,0.85);
+                    display: flex;
+                    align-items: center;
+                    justify-content: center;
+                    z-index: 1000;
+                    backdrop-filter: blur(5px);
+                }
+                
                 .post-modal-content {
                     max-width: 1100px;
                     width: 90%;
@@ -1362,79 +1388,109 @@ class ProfilePage {
                     max-height: 700px;
                     padding: 0;
                     display: flex;
-                    background: black;
+                    background: transparent;
                     position: relative;
-                }
-                
-                .close-modal {
-                    position: absolute;
-                    right: 15px;
-                    top: 15px;
-                    font-size: 28px;
-                    color: white;
-                    cursor: pointer;
-                    z-index: 10;
+                    border: none;
+                    border-radius: 12px;
+                    overflow: hidden;
+                    box-shadow: 0 8px 30px rgba(0, 0, 0, 0.3);
                 }
                 
                 .post-modal-container {
                     display: flex;
                     width: 100%;
                     height: 100%;
-                    background: white;
+                }
+                
+                .close-modal {
+                    position: absolute;
+                    right: 20px;
+                    top: 20px;
+                    font-size: 28px;
+                    color: white;
+                    cursor: pointer;
+                    z-index: 10;
+                    text-shadow: 0 0 3px rgba(0,0,0,0.5);
+                    opacity: 0.8;
+                    transition: all 0.2s ease;
+                    background: none;
+                    border: none;
+                    padding: 0;
+                    display: flex;
+                    align-items: center;
+                    justify-content: center;
+                    width: 40px;
+                    height: 40px;
+                    border-radius: 50%;
+                    background-color: rgba(0, 0, 0, 0.4);
+                }
+                
+                .close-modal:hover {
+                    opacity: 1;
+                    background-color: rgba(0, 0, 0, 0.6);
+                    transform: scale(1.1);
                 }
                 
                 .post-modal-image {
                     flex: 1;
-                    background: black;
+                    background-color: rgb(15, 15, 15);
                     display: flex;
                     align-items: center;
                     justify-content: center;
                     overflow: hidden;
+                    position: relative;
+                    border: none;
+                    /* Removed the border radius from left side */
                 }
                 
                 .post-modal-image img {
                     max-width: 100%;
                     max-height: 100%;
                     object-fit: contain;
+                    z-index: 0;
                 }
                 
                 .post-modal-sidebar {
-                    width: 350px;
+                    width: 380px;
                     display: flex;
                     flex-direction: column;
-                    border-left: 1px solid #dbdbdb;
                     background: white;
+                    border-left: 1px solid rgba(0, 0, 0, 0.1);
+                    border-top-right-radius: 12px;
+                    border-bottom-right-radius: 12px;
                 }
                 
                 .post-modal-header {
-                    padding: 14px 16px;
-                    border-bottom: 1px solid #dbdbdb;
+                    padding: 12px 16px;
+                    border-bottom: 1px solid rgba(0,0,0,0.1);
                     display: flex;
                     align-items: center;
+                    background-color: #fff;
                 }
                 
                 .post-modal-header img {
-                    width: 32px;
-                    height: 32px;
+                    width: 36px;
+                    height: 36px;
                     border-radius: 50%;
-                    margin-right: 10px;
+                    margin-right: 12px;
                     object-fit: cover;
                 }
                 
                 .post-modal-comments {
                     flex: 1;
                     overflow-y: auto;
-                    padding: 16px;
+                    padding: 12px 16px;
+                    background-color: white;
                 }
                 
                 .post-caption, .post-comment {
                     display: flex;
-                    margin-bottom: 16px;
+                    margin-bottom: 15px;
                 }
                 
                 .post-caption img, .post-comment img {
-                    width: 32px;
-                    height: 32px;
+                    width: 36px;
+                    height: 36px;
                     border-radius: 50%;
                     margin-right: 12px;
                     object-fit: cover;
@@ -1453,38 +1509,52 @@ class ProfilePage {
                 .post-time {
                     font-size: 12px;
                     color: #8e8e8e;
-                    margin-top: 5px;
+                    margin-top: 4px;
                 }
                 
                 .post-modal-actions {
-                    padding: 10px 16px;
-                    border-top: 1px solid #dbdbdb;
+                    padding: 12px 16px;
+                    border-top: 1px solid rgba(0,0,0,0.1);
+                    background-color: white;
                 }
                 
                 .post-action-buttons {
                     display: flex;
-                    margin-bottom: 6px;
+                    margin-bottom: 8px;
                 }
                 
                 .post-action-buttons button {
                     background: none;
                     border: none;
                     font-size: 24px;
-                    padding: 8px;
-                    margin-right: 8px;
+                    padding: 4px;
+                    margin-right: 16px;
                     cursor: pointer;
                     color: #262626;
+                    transition: transform 0.2s ease;
+                }
+                
+                .post-action-buttons button:hover {
+                    transform: scale(1.1);
+                }
+                
+                .like-button:hover i {
+                    color: #ed4956;
                 }
                 
                 .post-likes {
                     font-weight: 600;
                     margin-bottom: 8px;
+                    font-size: 15px;
                 }
                 
                 .post-modal-comment-form {
                     display: flex;
-                    padding: 16px;
-                    border-top: 1px solid #dbdbdb;
+                    padding: 12px 16px;
+                    border-top: 1px solid rgba(0,0,0,0.1);
+                    background-color: white;
+                    align-items: center;
+                    border-bottom-right-radius: 12px;
                 }
                 
                 .comment-input {
@@ -1492,6 +1562,7 @@ class ProfilePage {
                     border: none;
                     outline: none;
                     padding: 8px 0;
+                    font-size: 15px;
                 }
                 
                 .post-comment-button {
@@ -1500,7 +1571,9 @@ class ProfilePage {
                     color: var(--primary-color);
                     font-weight: 600;
                     cursor: pointer;
-                    opacity: 0.5;
+                    opacity: 0.7;
+                    transition: opacity 0.2s;
+                    padding: 8px;
                 }
                 
                 .post-comment-button:hover {
@@ -1515,19 +1588,31 @@ class ProfilePage {
                     .post-modal-content {
                         height: auto;
                         max-height: 90vh;
+                        width: 95%;
                     }
                     
                     .post-modal-image {
                         height: 50vh;
+                        border-top-left-radius: 12px;
+                        border-top-right-radius: 12px;
+                        border-bottom-left-radius: 0;
                     }
                     
                     .post-modal-sidebar {
                         width: 100%;
                         max-height: 40vh;
+                        border-bottom-left-radius: 12px;
+                        border-bottom-right-radius: 12px;
+                        border-top-right-radius: 0;
+                    }
+                    
+                    .close-modal {
+                        right: 10px;
+                        top: 10px;
                     }
                 }
             `;
-            document.head.appendChild(styleEl);
+            document.head.appendChild(style);
             
             // Setup event listeners for modal
             const modal = document.getElementById('post-modal');
@@ -1536,20 +1621,22 @@ class ProfilePage {
             const commentButton = modal.querySelector('.post-comment-button');
             const likeButton = modal.querySelector('.like-button');
             
-            // Close modal
+            // Close modal - stili ve modal elementini tamamen kaldırarak
             closeButton.addEventListener('click', () => {
-                document.body.removeChild(modal);
-                document.head.removeChild(styleEl);
+                const styleElement = document.getElementById('post-modal-styles');
+                if (styleElement) styleElement.remove();
+                if (modal) modal.remove();
             });
             
             // Click outside to close
-            window.addEventListener('click', (e) => {
+            modal.addEventListener('click', (e) => {
                 if (e.target === modal) {
-                    document.body.removeChild(modal);
-                    document.head.removeChild(styleEl);
+                    const styleElement = document.getElementById('post-modal-styles');
+                    if (styleElement) styleElement.remove();
+                    modal.remove();
                 }
             });
-            
+
             // Like post
             likeButton.addEventListener('click', async () => {
                 try {

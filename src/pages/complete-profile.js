@@ -33,119 +33,181 @@ class CompleteProfilePage {
 
             // HTML içeriğini oluştur
             appContainer.innerHTML = `
+                <link rel="stylesheet" href="/src/styles/ui-components.css">
+                
                 <style>
-                    :root {
-                        --primary-color: #5563de;
-                        --primary-light: #7b87e7;
-                        --primary-dark: #3a47c2;
-                        --secondary-color: #f27059;
-                        --bg-color: #f5f8fc;
-                        --card-color: #ffffff;
-                        --text-primary: #333333;
-                        --text-secondary: #666666;
-                        --border-color: #e1e4ea;
-                        --error-color: #e74c3c;
-                        --success-color: #2ecc71;
+                    .complete-profile-container {
+                        min-height: 100vh;
+                        display: flex;
+                        align-items: center;
+                        justify-content: center;
+                        background: linear-gradient(135deg, var(--primary-light) 0%, var(--primary-dark) 100%);
+                        padding: 20px;
+                        position: relative;
+                        overflow: hidden;
+                        font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
                     }
                     
-                    .complete-profile-container {
-                        display: flex;
-                        justify-content: center;
-                        align-items: center;
-                        min-height: 100vh;
-                        background-color: var(--bg-color);
-                        font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
-                        padding: 20px;
+                    .complete-profile-container::before {
+                        content: "";
+                        position: absolute;
+                        top: -50%;
+                        right: -50%;
+                        width: 100%;
+                        height: 100%;
+                        background: radial-gradient(circle, rgba(255,255,255,0.2) 0%, rgba(255,255,255,0) 60%);
+                        transform: rotate(30deg);
+                    }
+                    
+                    .complete-profile-container::after {
+                        content: "";
+                        position: absolute;
+                        bottom: -50%;
+                        left: -50%;
+                        width: 100%;
+                        height: 100%;
+                        background: radial-gradient(circle, rgba(255,255,255,0.15) 0%, rgba(255,255,255,0) 60%);
+                        transform: rotate(-20deg);
                     }
                     
                     .profile-form-card {
-                        background-color: var(--card-color);
-                        border-radius: 16px;
-                        box-shadow: 0 8px 24px rgba(0, 0, 0, 0.1);
                         width: 100%;
                         max-width: 500px;
+                        background-color: var(--card-color);
+                        border-radius: 16px;
+                        box-shadow: var(--shadow-xl);
                         padding: 40px;
+                        text-align: center;
                         position: relative;
-                        overflow: hidden;
+                        z-index: 10;
+                        animation: fadeInUp 0.6s ease-out;
                     }
                     
                     .profile-form-card::before {
-                        content: '';
+                        content: "";
                         position: absolute;
                         top: 0;
                         left: 0;
-                        right: 0;
+                        width: 100%;
                         height: 6px;
-                        background: linear-gradient(to right, var(--primary-color), var(--secondary-color));
+                        background: linear-gradient(90deg, var(--primary-color), var(--secondary-color));
+                    }
+                    
+                    .brand-logo {
+                        font-size: 32px;
+                        font-weight: 800;
+                        margin-bottom: 10px;
+                        color: var(--primary-color);
+                        background: linear-gradient(45deg, var(--primary-color), var(--secondary-color));
+                        -webkit-background-clip: text;
+                        -webkit-text-fill-color: transparent;
+                        letter-spacing: 1px;
                     }
                     
                     h1 {
-                        text-align: center;
-                        margin-bottom: 1.5rem;
-                        color: var(--primary-color);
-                        font-size: 28px;
-                        font-weight: 700;
+                        font-size: 24px;
+                        font-weight: 600;
+                        margin-bottom: 25px;
+                        color: var(--text-primary);
+                    }
+                    
+                    .form-subtitle {
+                        font-size: 16px;
+                        color: var(--text-secondary);
+                        margin-bottom: 30px;
                     }
                     
                     .form-group {
-                        margin-bottom: 20px;
+                        margin-bottom: 24px;
+                        position: relative;
                         text-align: left;
                     }
                     
-                    label {
+                    .form-label {
                         display: block;
                         margin-bottom: 8px;
+                        font-weight: 600;
                         color: var(--text-primary);
-                        font-weight: 500;
-                        font-size: 14px;
-                    }
-                    
-                    .form-control {
-                        width: 100%;
-                        padding: 12px 16px;
-                        border: 1px solid var(--border-color);
-                        border-radius: 8px;
                         font-size: 15px;
-                        transition: all 0.2s ease;
-                        background-color: #f9fafc;
-                        color: var(--text-primary);
-                        box-sizing: border-box;
                     }
                     
-                    .form-control:focus {
-                        outline: none;
+                    .input {
+                        width: 100%;
+                        padding: 14px 16px;
+                        border: 1px solid var(--border-color);
+                        border-radius: var(--border-radius-md);
+                        font-size: 15px;
+                        transition: all 0.3s ease;
+                        background-color: var(--gray-50);
+                    }
+                    
+                    .input:focus {
                         border-color: var(--primary-color);
-                        box-shadow: 0 0 0 3px rgba(85, 99, 222, 0.2);
+                        box-shadow: 0 0 0 3px rgba(85, 99, 222, 0.15);
+                        background-color: white;
+                        outline: none;
                     }
                     
-                    textarea.form-control {
+                    .select {
+                        width: 100%;
+                        padding: 14px 16px;
+                        border: 1px solid var(--border-color);
+                        border-radius: var(--border-radius-md);
+                        font-size: 15px;
+                        transition: all 0.3s ease;
+                        background-color: var(--gray-50);
+                        appearance: none;
+                        background-image: url("data:image/svg+xml;charset=UTF-8,%3csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='currentColor' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3e%3cpolyline points='6 9 12 15 18 9'%3e%3c/polyline%3e%3c/svg%3e");
+                        background-repeat: no-repeat;
+                        background-position: right 16px center;
+                        background-size: 16px;
+                    }
+                    
+                    .select:focus {
+                        border-color: var(--primary-color);
+                        box-shadow: 0 0 0 3px rgba(85, 99, 222, 0.15);
+                        background-color: white;
+                        outline: none;
+                    }
+                    
+                    textarea.input {
                         resize: vertical;
                         min-height: 100px;
                     }
                     
-                    .profile-submit-btn {
+                    .form-hint {
+                        font-size: 13px;
+                        color: var(--text-secondary);
+                        margin-top: 6px;
+                    }
+                    
+                    .btn {
                         width: 100%;
                         padding: 14px;
-                        background-color: var(--primary-color);
-                        color: white;
-                        border: none;
-                        border-radius: 8px;
                         font-size: 16px;
                         font-weight: 600;
                         cursor: pointer;
-                        transition: background-color 0.2s ease, transform 0.1s ease;
-                        margin-top: 10px;
+                        border: none;
+                        border-radius: var(--border-radius-md);
+                        transition: all 0.3s ease;
                     }
                     
-                    .profile-submit-btn:hover {
-                        background-color: var(--primary-dark);
-                        transform: translateY(-1px);
+                    .btn-primary {
+                        background: linear-gradient(90deg, var(--primary-color), var(--primary-dark));
+                        color: white;
+                        box-shadow: 0 4px 8px rgba(46, 125, 50, 0.25);
                     }
                     
-                    .profile-submit-btn:disabled {
-                        background-color: var(--primary-light);
-                        cursor: not-allowed;
+                    .btn-primary:hover {
+                        background: linear-gradient(90deg, var(--primary-dark), var(--primary-color));
+                        transform: translateY(-2px);
+                        box-shadow: 0 6px 12px rgba(46, 125, 50, 0.3);
+                    }
+                    
+                    .btn-primary:disabled {
                         opacity: 0.7;
+                        cursor: not-allowed;
+                        transform: none;
                     }
                     
                     .profile-image-upload {
@@ -159,46 +221,133 @@ class CompleteProfilePage {
                         border-radius: 50%;
                         object-fit: cover;
                         margin-bottom: 15px;
-                        border: 3px solid var(--primary-light);
+                        border: 3px solid transparent;
+                        background-image: linear-gradient(#fff, #fff), 
+                                          linear-gradient(45deg, var(--primary-color), var(--secondary-color));
+                        background-origin: border-box;
+                        background-clip: content-box, border-box;
                     }
                     
                     .upload-btn {
-                        background-color: var(--primary-color);
+                        background: linear-gradient(90deg, var(--primary-color), var(--primary-dark));
                         color: white;
                         border: none;
-                        padding: 10px 15px;
-                        border-radius: 8px;
+                        padding: 10px 16px;
+                        border-radius: var(--border-radius-md);
                         cursor: pointer;
-                        font-weight: 500;
-                        transition: background-color 0.2s;
+                        font-weight: 600;
+                        transition: all 0.3s ease;
+                        box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
                     }
                     
                     .upload-btn:hover {
-                        background-color: var(--primary-dark);
+                        transform: translateY(-2px);
+                        box-shadow: 0 4px 8px rgba(0, 0, 0, 0.15);
                     }
                     
-                    .username-container {
-                        position: relative;
+                    .username-status {
+                        font-size: 13px;
+                        margin-top: 6px;
+                        display: block;
                     }
                     
-                    #username-availability-status {
-                        position: absolute;
-                        top: 100%;
-                        left: 0;
-                        font-size: 12px;
-                        margin-top: 5px;
+                    .alert {
+                        padding: 14px 16px;
+                        margin-bottom: 24px;
+                        border-radius: var(--border-radius-md);
+                        font-weight: 500;
+                        display: none;
+                        text-align: left;
+                    }
+                    
+                    .alert-error {
+                        background-color: rgba(239, 68, 68, 0.1);
+                        color: var(--error-color);
+                        border-left: 3px solid var(--error-color);
+                    }
+                    
+                    @keyframes fadeInUp {
+                        from {
+                            opacity: 0;
+                            transform: translateY(20px);
+                        }
+                        to {
+                            opacity: 1;
+                            transform: translateY(0);
+                        }
                     }
                     
                     @media (max-width: 576px) {
                         .profile-form-card {
-                            padding: 30px 15px;
+                            padding: 30px 20px;
+                            border-radius: 12px;
+                        }
+                    }
+                    
+                    .floating-shapes div {
+                        position: absolute;
+                        background: rgba(255, 255, 255, 0.1);
+                        border-radius: 50%;
+                        z-index: 1;
+                    }
+                    
+                    .shape1 {
+                        width: 200px;
+                        height: 200px;
+                        top: -100px;
+                        left: -100px;
+                        animation: float 8s infinite ease-in-out;
+                    }
+                    
+                    .shape2 {
+                        width: 150px;
+                        height: 150px;
+                        bottom: 50px;
+                        right: -50px;
+                        animation: float 10s infinite ease-in-out reverse;
+                    }
+                    
+                    .shape3 {
+                        width: 80px;
+                        height: 80px;
+                        bottom: -30px;
+                        left: 10%;
+                        animation: float 7s infinite ease-in-out;
+                    }
+                    
+                    .shape4 {
+                        width: 50px;
+                        height: 50px;
+                        top: 30%;
+                        right: 10%;
+                        animation: float 9s infinite ease-in-out reverse;
+                    }
+                    
+                    @keyframes float {
+                        0%, 100% {
+                            transform: translateY(0);
+                        }
+                        50% {
+                            transform: translateY(-20px);
                         }
                     }
                 </style>
                 
                 <div class="complete-profile-container">
+                    <div class="floating-shapes">
+                        <div class="shape1"></div>
+                        <div class="shape2"></div>
+                        <div class="shape3"></div>
+                        <div class="shape4"></div>
+                    </div>
+                    
                     <div class="profile-form-card">
+                        <div class="brand-logo">Photogram</div>
                         <h1>Profilinizi Tamamlayın</h1>
+                        <p class="form-subtitle">Kişiselleştirilmiş deneyim için birkaç bilgi daha ekleyelim</p>
+                        
+                        <div class="alert alert-error" id="profile-error"></div>
+                        
                         <form id="profile-form">
                             <div class="profile-image-upload">
                                 <input 
@@ -210,7 +359,7 @@ class CompleteProfilePage {
                                 <img 
                                     id="profile-image-preview" 
                                     class="profile-image-preview"
-                                    src="https://via.placeholder.com/150" 
+                                    src="data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHZpZXdCb3g9IjAgMCAyMDAgMjAwIj48Y2lyY2xlIGN4PSIxMDAiIGN5PSIxMDAiIHI9IjEwMCIgZmlsbD0iI2U2ZTZlNiIvPjxjaXJjbGUgY3g9IjEwMCIgY3k9IjgwIiByPSI0MCIgZmlsbD0iI2IzYjNiMyIvPjxwYXRoIGQ9Ik0xNjAgMTgwYzAtMzMuMTM3LTI2Ljg2My02MC02MC02MHMtNjAgMjYuODYzLTYwIDYwaDEyMHoiIGZpbGw9IiNiM2IzYjMiLz48L3N2Zz4=" 
                                     alt="Profil Resmi"
                                 >
                                 <button 
@@ -218,56 +367,57 @@ class CompleteProfilePage {
                                     id="upload-image-btn"
                                     class="upload-btn"
                                 >
-                                    Profil Resmi Yükle
+                                    <i class="fas fa-camera" style="margin-right: 8px;"></i> Profil Resmi Ekle
                                 </button>
                             </div>
                             
-                            <div class="username-container">
-                                <div class="form-group">
-                                    <label for="username">Kullanıcı Adı*</label>
-                                    <input 
-                                        type="text" 
-                                        id="username" 
-                                        class="form-control" 
-                                        required
-                                        placeholder="Benzersiz bir kullanıcı adı"
-                                    >
-                                </div>
-                                <span id="username-availability-status"></span>
+                            <div class="form-group">
+                                <label class="form-label" for="username">Kullanıcı Adı*</label>
+                                <input 
+                                    type="text" 
+                                    id="username" 
+                                    class="input" 
+                                    required
+                                    placeholder="Benzersiz bir kullanıcı adı seçin"
+                                >
+                                <span id="username-availability-status" class="username-status"></span>
                             </div>
                             
                             <div class="form-group">
-                                <label for="fullName">Adınız Soyadınız*</label>
+                                <label class="form-label" for="fullName">Ad Soyad*</label>
                                 <input 
                                     type="text" 
                                     id="fullName" 
-                                    class="form-control" 
+                                    class="input" 
                                     required
                                     placeholder="Adınız ve soyadınız"
                                 >
                             </div>
                             
                             <div class="form-group">
-                                <label for="bio">Biyografi</label>
+                                <label class="form-label" for="bio">Biyografi</label>
                                 <textarea 
                                     id="bio" 
-                                    class="form-control" 
+                                    class="input" 
                                     rows="3"
                                     placeholder="Kendinizden kısaca bahsedin (isteğe bağlı)"
                                 ></textarea>
+                                <div class="form-hint">Diğer kullanıcıların sizi tanıması için kısa bir açıklama ekleyin</div>
                             </div>
                             
                             <div class="form-group">
-                                <label for="gender">Cinsiyet*</label>
-                                <select id="gender" class="form-control" required>
-                                    <option value="">Lütfen seçin</option>
+                                <label class="form-label" for="gender">Cinsiyet*</label>
+                                <select id="gender" class="select" required>
+                                    <option value="">Cinsiyet seçiniz</option>
                                     <option value="male">Erkek</option>
                                     <option value="female">Kadın</option>
                                     <option value="other">Diğer</option>
                                 </select>
                             </div>
                             
-                            <button type="submit" class="profile-submit-btn">Profili Kaydet</button>
+                            <button type="submit" class="btn btn-primary" id="profile-submit-btn">
+                                <i class="fas fa-check-circle" style="margin-right: 8px;"></i> Profili Tamamla
+                            </button>
                         </form>
                     </div>
                 </div>
@@ -292,6 +442,7 @@ class CompleteProfilePage {
             'profile-image-preview'
         );
         const uploadImageBtn = document.getElementById('upload-image-btn');
+        const profileError = document.getElementById('profile-error');
 
         uploadImageBtn.addEventListener('click', () => {
             profileImageInput.click();
@@ -327,7 +478,7 @@ class CompleteProfilePage {
             if (!usernameRegex.test(username)) {
                 usernameStatus.textContent =
                     'Kullanıcı adı sadece küçük harf, rakam ve alt çizgi içerebilir';
-                usernameStatus.style.color = 'red';
+                usernameStatus.style.color = 'var(--error-color)';
                 isUsernameAvailable = false;
                 return;
             }
@@ -335,14 +486,14 @@ class CompleteProfilePage {
             if (username.length < 3) {
                 usernameStatus.textContent =
                     'Kullanıcı adı en az 3 karakter olmalıdır';
-                usernameStatus.style.color = 'red';
+                usernameStatus.style.color = 'var(--error-color)';
                 isUsernameAvailable = false;
                 return;
             }
 
             usernameTimeout = setTimeout(async () => {
                 usernameStatus.textContent = 'Kontrol ediliyor...';
-                usernameStatus.style.color = '#666';
+                usernameStatus.style.color = 'var(--text-secondary)';
 
                 try {
                     const available =
@@ -350,19 +501,19 @@ class CompleteProfilePage {
 
                     if (available) {
                         usernameStatus.textContent = '✓ Kullanıcı adı uygun';
-                        usernameStatus.style.color = 'green';
+                        usernameStatus.style.color = 'var(--success-color)';
                         isUsernameAvailable = true;
                     } else {
                         usernameStatus.textContent =
                             '✗ Bu kullanıcı adı zaten kullanılıyor';
-                        usernameStatus.style.color = 'red';
+                        usernameStatus.style.color = 'var(--error-color)';
                         isUsernameAvailable = false;
                     }
                 } catch (error) {
                     console.error('Kullanıcı adı kontrolü hatası:', error);
                     usernameStatus.textContent =
                         'Kontrol sırasında bir hata oluştu';
-                    usernameStatus.style.color = 'red';
+                    usernameStatus.style.color = 'var(--error-color)';
                     isUsernameAvailable = false;
                 }
             }, 500);
@@ -370,6 +521,9 @@ class CompleteProfilePage {
 
         form.addEventListener('submit', async (e) => {
             e.preventDefault();
+            
+            // Reset error message
+            profileError.style.display = 'none';
 
             try {
                 const username = document
@@ -389,22 +543,26 @@ class CompleteProfilePage {
 
                 // Validasyonlar
                 if (!username || username.length < 3) {
-                    alert('Kullanıcı adı en az 3 karakter olmalıdır');
+                    profileError.textContent = 'Kullanıcı adı en az 3 karakter olmalıdır';
+                    profileError.style.display = 'block';
                     return;
                 }
 
                 if (!isUsernameAvailable) {
-                    alert('Lütfen farklı bir kullanıcı adı seçin');
+                    profileError.textContent = 'Lütfen farklı bir kullanıcı adı seçin';
+                    profileError.style.display = 'block';
                     return;
                 }
 
                 if (!fullName) {
-                    alert('Adınızı ve soyadınızı girmelisiniz');
+                    profileError.textContent = 'Adınızı ve soyadınızı girmelisiniz';
+                    profileError.style.display = 'block';
                     return;
                 }
 
                 if (!gender) {
-                    alert('Lütfen cinsiyet seçimi yapın');
+                    profileError.textContent = 'Lütfen cinsiyet seçimi yapın';
+                    profileError.style.display = 'block';
                     return;
                 }
 
@@ -425,11 +583,10 @@ class CompleteProfilePage {
                 };
 
                 // Butonun durumunu güncelleyerek kullanıcıya geri bildirim ver
-                const submitButton = document.querySelector(
-                    '.profile-submit-btn'
-                );
+                const submitButton = document.getElementById('profile-submit-btn');
                 submitButton.disabled = true;
-                submitButton.textContent = 'Kaydediliyor...';
+                submitButton.innerHTML =
+                    '<span class="spinner spinner-sm"></span> Kaydediliyor...';
 
                 await AuthService.updateUserProfile(
                     currentUser.uid,
@@ -441,15 +598,15 @@ class CompleteProfilePage {
                 window.location.replace('/home');
             } catch (error) {
                 console.error('Profil kaydetme hatası:', error);
-                alert(`Profil kaydedilirken bir hata oluştu: ${error.message}`);
+                profileError.textContent = `Profil kaydedilirken bir hata oluştu: ${error.message}`;
+                profileError.style.display = 'block';
 
                 // Hata durumunda butonu tekrar aktif hale getir
-                const submitButton = document.querySelector(
-                    '.profile-submit-btn'
-                );
+                const submitButton = document.getElementById('profile-submit-btn');
                 if (submitButton) {
                     submitButton.disabled = false;
-                    submitButton.textContent = 'Profili Kaydet';
+                    submitButton.innerHTML =
+                        '<i class="fas fa-check-circle" style="margin-right: 8px;"></i> Profili Tamamla';
                 }
             }
         });

@@ -356,7 +356,7 @@
     justify-content: space-between;
 }
 
-.card-body {
+mcard-body {
     padding: 1.5rem;
 }
 
@@ -514,7 +514,7 @@
 .modal-content {
     background-color: white;
     border-radius: var(--border-radius-lg);
-    padding: 1.5rem;
+    padding: 0.8rem;
     box-shadow: var(--shadow-xl);
     max-width: 90%;
     max-height: 90vh;
