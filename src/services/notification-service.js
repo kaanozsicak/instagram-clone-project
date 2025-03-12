@@ -166,6 +166,30 @@ export class NotificationService {
             return false;
         }
     }
+
+    /**
+     * Takip isteği gönderir
+     * @param {string} senderUserId - İstek gönderen kullanıcı ID'si
+     * @param {string} senderUsername - İstek gönderen kullanıcı adı
+     * @param {string} recipientId - İstek alan kullanıcı ID'si
+     * @returns {Promise<string>} - Oluşturulan bildirimin ID'si
+     */
+    static async sendFollowRequest(senderUserId, senderUsername, recipientId) {
+        try {
+            return this.createNotification({
+                type: 'follow_request',
+                status: 'pending',
+                recipientId: recipientId,
+                senderUserId: senderUserId,
+                senderUsername: senderUsername,
+                content: 'sizi takip etmek istiyor',
+                createdAt: new Date(),
+            });
+        } catch (error) {
+            console.error('Takip isteği gönderme hatası:', error);
+            throw error;
+        }
+    }
 }
 
 export default NotificationService;

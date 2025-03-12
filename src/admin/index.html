@@ -1,0 +1,206 @@
+<!DOCTYPE html>
+<html lang="tr">
+    <head>
+        <meta charset="UTF-8" />
+        <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+        <title>Instagram Klonu - Admin Paneli</title>
+        <link rel="stylesheet" href="../styles/global.css" />
+        <link rel="stylesheet" href="../styles/ui-components.css" />
+        <style>
+            .admin-container {
+                max-width: 800px;
+                margin: 50px auto;
+                padding: 20px;
+                background-color: #fff;
+                border-radius: 10px;
+                box-shadow: var(--shadow-md);
+            }
+
+            h1 {
+                color: var(--primary-color);
+                margin-bottom: 20px;
+            }
+
+            .admin-section {
+                margin-bottom: 30px;
+                border-bottom: 1px solid #eee;
+                padding-bottom: 20px;
+            }
+
+            .admin-section h2 {
+                color: #333;
+                margin-bottom: 15px;
+            }
+
+            .results {
+                margin-top: 15px;
+                padding: 15px;
+                background-color: var(--gray-100);
+                border-radius: var(--border-radius-md);
+                font-family: monospace;
+                white-space: pre-wrap;
+                display: none;
+            }
+
+            .login-form {
+                margin-bottom: 20px;
+            }
+
+            .login-form .input {
+                margin-bottom: 10px;
+            }
+        </style>
+    </head>
+    <body>
+        <div class="admin-container card">
+            <h1>Instagram Klonu - Admin Paneli</h1>
+
+            <div id="login-section" style="display: none">
+                <h2>Giriş</h2>
+                <div class="login-form">
+                    <input
+                        type="email"
+                        id="email"
+                        placeholder="E-posta"
+                        class="input"
+                    />
+                    <input
+                        type="password"
+                        id="password"
+                        placeholder="Şifre"
+                        class="input"
+                    />
+                    <button class="btn btn-primary" id="login-btn">
+                        Giriş
+                    </button>
+                </div>
+            </div>
+
+            <div id="dashboard" style="display: none">
+                <div class="admin-section">
+                    <h2>Veritabanı Bakımı</h2>
+                    <div class="btn-group">
+                        <button
+                            class="btn btn-warning"
+                            id="cleanup-conversations"
+                        >
+                            <i class="fas fa-broom"></i> Bozuk Sohbetleri
+                            Temizle
+                        </button>
+                        <button class="btn btn-info" id="check-users">
+                            <i class="fas fa-user-check"></i> Kullanıcı
+                            Bilgilerini Kontrol Et
+                        </button>
+                    </div>
+                    <div class="results" id="db-results"></div>
+                </div>
+
+                <div class="admin-section">
+                    <h2>Sistem Bilgileri</h2>
+                    <button class="btn btn-light" id="show-stats">
+                        <i class="fas fa-chart-bar"></i> İstatistikleri Göster
+                    </button>
+                    <div class="results" id="stats-results"></div>
+                </div>
+
+                <div class="admin-section">
+                    <h2>Ayarlar</h2>
+                    <button class="btn btn-danger" id="logout-btn">
+                        <i class="fas fa-sign-out-alt"></i> Çıkış Yap
+                    </button>
+                </div>
+            </div>
+        </div>
+
+        <script type="module">
+            import { AuthService } from '../services/auth-service.js';
+            import { DatabaseRepairTool } from './database-repair.js';
+
+            // Sayfa yüklendiğinde oturum durumunu kontrol et
+            document.addEventListener('DOMContentLoaded', async () => {
+                try {
+                    const user = await AuthService.ensureCurrentUser();
+
+                    if (user) {
+                        const userProfile = await AuthService.getUserProfile(
+                            user.uid
+                        );
+                        if (userProfile && userProfile.isAdmin) {
+                            document.getElementById('dashboard').style.display =
+                                'block';
+                        } else {
+                            alert('Admin yetkisi gerekli!');
+                            window.location.href = '/';
+                        }
+                    } else {
+                        document.getElementById('login-section').style.display =
+                            'block';
+                    }
+                } catch (error) {
+                    console.error('Oturum kontrolü hatası:', error);
+                    document.getElementById('login-section').style.display =
+                        'block';
+                }
+            });
+
+            // Event Listeners
+            document
+                .getElementById('cleanup-conversations')
+                .addEventListener('click', async () => {
+                    try {
+                        const confirmation = confirm(
+                            'Bozuk sohbetler temizlenecek. Bu işlem geri alınamaz. Devam etmek istiyor musunuz?'
+                        );
+                        if (confirmation) {
+                            const result =
+                                await DatabaseRepairTool.cleanupInvalidConversations();
+
+                            const resultsDiv =
+                                document.getElementById('db-results');
+                            resultsDiv.textContent = JSON.stringify(
+                                result,
+                                null,
+                                2
+                            );
+                            resultsDiv.style.display = 'block';
+                        }
+                    } catch (error) {
+                        console.error('Temizleme hatası:', error);
+                        alert(
+                            'Temizleme sırasında bir hata oluştu: ' +
+                                error.message
+                        );
+                    }
+                });
+
+            document
+                .getElementById('login-btn')
+                .addEventListener('click', async () => {
+                    const email = document.getElementById('email').value;
+                    const password = document.getElementById('password').value;
+
+                    try {
+                        await AuthService.login(email, password);
+                        location.reload();
+                    } catch (error) {
+                        console.error('Giriş hatası:', error);
+                        alert('Giriş başarısız: ' + error.message);
+                    }
+                });
+
+            document
+                .getElementById('logout-btn')
+                .addEventListener('click', async () => {
+                    try {
+                        await AuthService.logout();
+                        location.reload();
+                    } catch (error) {
+                        console.error('Çıkış hatası:', error);
+                        alert(
+                            'Çıkış yapılırken bir hata oluştu: ' + error.message
+                        );
+                    }
+                });
+        </script>
+    </body>
+</html>

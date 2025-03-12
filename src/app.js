@@ -17,6 +17,7 @@ class App {
             '/signup': SignupPage,
             '/complete-profile': CompleteProfilePage,
             '/profile': ProfilePage,
+            '/messages': 'messages', // Yeni eklenen mesajlar sayfası rotası
         };
 
         this.init();
@@ -108,6 +109,18 @@ class App {
                 }
             }
 
+            // Post detay sayfası kontrolü
+            if (path.startsWith('/post/')) {
+                const postId = path.split('/post/')[1];
+                if (postId) {
+                    const { default: PostDetailPage } = await import(
+                        './pages/post-detail.js'
+                    );
+                    await PostDetailPage.render(postId);
+                    return;
+                }
+            }
+
             // Standart route işlemi
             switch (path) {
                 case '/login':
@@ -141,6 +154,13 @@ class App {
                     } else {
                         await HomePage.render();
                     }
+                    break;
+
+                case '/messages':
+                    const { default: MessagesPage } = await import(
+                        './pages/messages.js'
+                    );
+                    await MessagesPage.render();
                     break;
 
                 default:

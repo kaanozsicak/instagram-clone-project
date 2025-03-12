@@ -78,23 +78,48 @@ export class UserService {
         }
     }
 
+    /**
+     * Kullanıcı aramayı gerçekleştirir
+     * @param {string} searchTerm - Arama terimi
+     * @returns {Promise<Array>} - Bulunan kullanıcıların listesi
+     */
     static async searchUsers(username) {
         try {
+            console.log('Kullanıcı araması başlatıldı:', username);
+
+            if (!username || username.length < 2) {
+                return [];
+            }
+
             const usersRef = collection(firestore, 'users');
             const q = query(
                 usersRef,
                 where('username', '>=', username),
-                where('username', '<=', username + '\uf8ff')
+                where('username', '<=', username + '\uf8ff'),
+                limit(10)
             );
 
             const querySnapshot = await getDocs(q);
-            return querySnapshot.docs.map((doc) => ({
-                id: doc.id,
-                ...doc.data(),
-            }));
+            const users = [];
+
+            // Geçerli kullanıcıları filtrele
+            querySnapshot.forEach((doc) => {
+                const userData = doc.data();
+
+                // Geçerli kullanıcı mı kontrol et
+                if (doc.id && doc.id !== 'undefined' && doc.id !== 'null') {
+                    users.push({
+                        uid: doc.id,
+                        ...userData,
+                    });
+                }
+            });
+
+            console.log(`${username} araması sonuçları:`, users);
+            return users;
         } catch (error) {
             console.error('Kullanıcı arama hatası:', error);
-            throw error;
+            return [];
         }
     }
 

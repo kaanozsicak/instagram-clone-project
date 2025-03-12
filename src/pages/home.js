@@ -44,599 +44,638 @@ class HomePage {
                 3
             );
 
+            // Önerilen kullanıcılar için HTML oluştur
+            const suggestedUsersHTML =
+                suggestedUsers.length > 0
+                    ? suggestedUsers
+                          .map(
+                              (user) => `
+                    <div class="suggestion-item">
+                        <div class="suggestion-user">
+                            <img src="${
+                                user.profileImage ||
+                                user.profilePicture ||
+                                'data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHZpZXdCb3g9IjAgMCAyMDAgMjAwIj48Y2lyY2xlIGN4PSIxMDAiIGN5PSIxMDAiIHI9IjEwMCIgZmlsbD0iI2U2ZTZlNiIvPjxjaXJjbGUgY3g9IjEwMCIgY3k9IjgwIiByPSI0MCIgZmlsbD0iI2IzYjNiMyIvPjxwYXRoIGQ9Ik0xNjAgMTgwYzAtMzMuMTM3LTI2Ljg2My02MC02MC02MHMtNjAgMjYuODYzLTYwIDYwaDEyMHoiIGZpbGw9IiNiM2IzYjMiLz48L3N2Zz4='
+                            }" alt="${user.username}">
+                            <div class="suggestion-user-info">
+                                <h4>${user.username}</h4>
+                                <p>${user.fullName || ''}</p>
+                            </div>
+                        </div>
+                        <button class="btn btn-primary btn-sm follow-suggestion-btn" data-username="${
+                            user.username
+                        }">Takip Et</button>
+                    </div>
+                `
+                          )
+                          .join('')
+                    : '<p style="text-align: center; padding: 15px; color: var(--text-secondary);">Şu anda öneri bulunmuyor</p>';
+
+            // Hikayeler için HTML oluştur - Bu kısım eksikti
+            const storiesHTML = `
+                <div class="story-item">
+                    <img src="${
+                        userProfile.profilePicture ||
+                        userProfile.profileImage ||
+                        'data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHZpZXdCb3g9IjAgMCAyMDAgMjAwIj48Y2lyY2xlIGN4PSIxMDAiIGN5PSIxMDAiIHI9IjEwMCIgZmlsbD0iI2U2ZTZlNiIvPjxjaXJjbGUgY3g9IjEwMCIgY3k9IjgwIiByPSI0MCIgZmlsbD0iI2IzYjNiMyIvPjxwYXRoIGQ9Ik0xNjAgMTgwYzAtMzMuMTM3LTI2Ljg2My02MC02MC02MHMtNjAgMjYuODYzLTYwIDYwaDEyMHoiIGZpbGw9IiNiM2IzYjMiLz48L3N2Zz4='
+                    }" alt="${userProfile.username}">
+                    <span>${userProfile.username}</span>
+                </div>
+                <div class="story-item">
+                    <img src="data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHZpZXdCb3g9IjAgMCAyMDAgMjAwIj48Y2lyY2xlIGN4PSIxMDAiIGN5PSIxMDAiIHI9IjEwMCIgZmlsbD0iI2U2ZTZlNiIvPjxjaXJjbGUgY3g9IjEwMCIgY3k9IjgwIiByPSI0MCIgZmlsbD0iI2IzYjNiMyIvPjxwYXRoIGQ9Ik0xNjAgMTgwYzAtMzMuMTM3LTI2Ljg2My02MC02MC02MHMtNjAgMjYuODYzLTYwIDYwaDEyMHoiIGZpbGw9IiNiM2IzYjMiLz48L3N2Zz4=" alt="Kullanıcı 1">
+                    <span>user1</span>
+                </div>
+                <div class="story-item">
+                    <img src="data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHZpZXdCb3g9IjAgMCAyMDAgMjAwIj48Y2lyY2xlIGN4PSIxMDAiIGN5PSIxMDAiIHI9IjEwMCIgZmlsbD0iI2U2ZTZlNiIvPjxjaXJjbGUgY3g9IjEwMCIgY3k9IjgwIiByPSI0MCIgZmlsbD0iI2IzYjNiMyIvPjxwYXRoIGQ9Ik0xNjAgMTgwYzAtMzMuMTM3LTI2Ljg2My02MC02MC02MHMtNjAgMjYuODYzLTYwIDYwaDEyMHoiIGZpbGw9IiNiM2IzYjMiLz48L3N2Zz4=" alt="Kullanıcı 2">
+                    <span>user2</span>
+                </div>
+                <div class="story-item">
+                    <img src="data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHZpZXdCb3g9IjAgMCAyMDAgMjAwIj48Y2lyY2xlIGN4PSIxMDAiIGN5PSIxMDAiIHI9IjEwMCIgZmlsbD0iI2U2ZTZlNiIvPjxjaXJjbGUgY3g9IjEwMCIgY3k9IjgwIiByPSI0MCIgZmlsbD0iI2IzYjNiMyIvPjxwYXRoIGQ9Ik0xNjAgMTgwYzAtMzMuMTM3LTI2Ljg2My02MC02MC02MHMtNjAgMjYuODYzLTYwIDYwaDEyMHoiIGZpbGw9IiNiM2IzYjMiLz48L3N2Zz4=" alt="Kullanıcı 3">
+                    <span>user3</span>
+                </div>
+            `;
+
             // Sayfayı oluştur
             appContainer.innerHTML = `
-                <style>
-                    :root {
-                        --primary-color: #5563de;
-                        --primary-light: #7b87e7;
-                        --primary-dark: #3a47c2;
-                        --secondary-color: #f27059;
-                        --bg-color: #f5f8fc;
-                        --card-color: #ffffff;
-                        --text-primary: #333333;
-                        --text-secondary: #666666;
-                        --border-color: #e1e4ea;
-                        --error-color: #e74c3c;
-                        --success-color: #2ecc71;
+            <link rel="stylesheet" href="./src/styles/ui-components.css">
+            
+            <style>
+                .home-container {
+                    max-width: 1140px;
+                    margin: 0 auto;
+                    padding: 20px;
+                    display: grid;
+                    grid-template-columns: 2fr 1fr;
+                    gap: 30px;
+                }
+                
+                @media (max-width: 1140px) {
+                    .home-container {
+                        grid-template-columns: 1fr;
+                        max-width: 600px;
                     }
                     
-                    .home-page {
-                        max-width: 1200px;
-                        margin: 0 auto;
-                        padding: 20px;
-                        font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
-                        background-color: var(--bg-color);
-                        min-height: 100vh;
+                    .sidebar {
+                        display: none;
                     }
-                    
-                    .header {
-                        display: flex;
-                        justify-content: space-between;
-                        align-items: center;
-                        margin-bottom: 30px;
-                        padding: 15px 20px;
-                        background-color: var(--card-color);
-                        border-radius: 16px;
-                        box-shadow: 0 4px 12px rgba(0,0,0,0.08);
-                        position: relative;
-                    }
-                    
-                    .header::before {
-                        content: '';
-                        position: absolute;
-                        top: 0;
-                        left: 0;
-                        right: 0;
-                        height: 6px;
-                        background: linear-gradient(to right, var(--primary-color), var(--secondary-color));
-                        border-top-left-radius: 16px;
-                        border-top-right-radius: 16px;
-                    }
-                    
-                    .app-logo {
-                        font-size: 24px;
-                        font-weight: 700;
-                        color: var(--primary-color);
-                    }
-                    
-                    nav {
-                        display: flex;
-                        gap: 15px;
-                        align-items: center;
-                    }
-                    
-                    #profile-link {
-                        color: var(--primary-color);
-                        text-decoration: none;
-                        font-weight: 600;
-                        transition: all 0.2s ease;
-                    }
-                    
-                    #profile-link:hover {
-                        background-color: rgba(85, 99, 222, 0.1);
-                        padding: 8px 12px;
-                        border-radius: 8px;
-                    }
-                    
-                    #logout-button {
-                        background-color: var(--error-color);
-                        color: white;
-                        border: none;
-                        padding: 8px 16px;
-                        border-radius: 8px;
-                        font-weight: 600;
-                        cursor: pointer;
-                        transition: background-color 0.2s ease, transform 0.1s ease;
-                    }
-                    
-                    #logout-button:hover {
-                        background-color: #c0392b;
-                        transform: translateY(-1px);
-                    }
-                    
-                    .home-content {
-                        display: grid;
-                        grid-template-columns: 2fr 1fr;
-                        gap: 30px;
-                    }
-                    
-                    @media (max-width: 992px) {
-                        .home-content {
-                            grid-template-columns: 1fr;
-                        }
-                    }
-                    
-                    .search-box {
-                        position: relative;
-                        margin-bottom: 30px;
-                    }
-                    
-                    #search-input {
-                        width: 100%;
-                        padding: 12px 16px;
-                        border: 1px solid var(--border-color);
-                        border-radius: 8px;
-                        font-size: 15px;
-                        background-color: #f9fafc;
-                        color: var(--text-primary);
-                        transition: all 0.2s ease;
-                    }
-                    
-                    #search-input:focus {
-                        outline: none;
-                        border-color: var(--primary-color);
-                        box-shadow: 0 0 0 3px rgba(85, 99, 222, 0.2);
-                    }
-                    
-                    #search-results {
-                        position: absolute;
-                        top: 100%;
-                        left: 0;
-                        width: 100%;
-                        background: var(--card-color);
-                        border: 1px solid var(--border-color);
-                        border-top: none;
-                        border-radius: 0 0 8px 8px;
-                        z-index: 10;
-                        max-height: 300px;
-                        overflow-y: auto;
-                        box-shadow: 0 4px 12px rgba(0,0,0,0.08);
-                    }
-                    
-                    .search-result-item {
-                        padding: 12px 16px;
-                        border-bottom: 1px solid var(--border-color);
-                        cursor: pointer;
-                        transition: background-color 0.2s ease;
-                    }
-                    
-                    .search-result-item:last-child {
-                        border-bottom: none;
-                    }
-                    
-                    .search-result-item:hover {
-                        background-color: rgba(85, 99, 222, 0.05);
-                    }
-                    
-                    .posts-container {
-                        display: flex;
-                        flex-direction: column;
-                        gap: 30px;
+                }
+                
+                @media (max-width: 600px) {
+                    .home-container {
+                        padding: 0;
                     }
                     
                     .post-card {
-                        background-color: var(--card-color);
-                        border-radius: 16px;
-                        overflow: hidden;
-                        box-shadow: 0 4px 12px rgba(0,0,0,0.08);
+                        border-radius: 0;
+                        margin-bottom: 20px;
                     }
-                    
-                    .post-header {
-                        padding: 15px;
-                        display: flex;
-                        align-items: center;
-                        gap: 12px;
-                        border-bottom: 1px solid var(--border-color);
-                    }
-                    
-                    .user-avatar {
-                        width: 40px;
-                        height: 40px;
-                        border-radius: 50%;
-                        object-fit: cover;
-                        border: 2px solid var(--primary-light);
-                    }
-                    
-                    .username {
-                        font-weight: 600;
-                        color: var(--text-primary);
-                    }
-                    
-                    .post-image {
-                        width: 100%;
-                        max-height: 600px;
-                        object-fit: cover;
-                    }
-                    
-                    .post-image img {
-                        width: 100%;
-                        display: block;
-                    }
-                    
-                    .post-actions {
-                        padding: 15px;
-                    }
-                    
-                    .action-icons {
-                        display: flex;
-                        gap: 20px;
-                        margin-bottom: 15px;
-                    }
-                    
-                    .action-icons i {
-                        color: var(--text-primary);
-                        font-size: 24px;
-                        cursor: pointer;
-                        transition: all 0.2s ease;
-                    }
-                    
-                    .action-icons i:hover {
-                        color: var(--primary-color);
-                        transform: scale(1.1);
-                    }
-                    
-                    .post-likes {
-                        font-weight: 600;
-                        margin-bottom: 8px;
-                        color: var(--text-primary);
-                    }
-                    
-                    .post-caption {
-                        margin-bottom: 12px;
-                        color: var(--text-primary);
-                    }
-                    
-                    .post-caption .username {
-                        font-weight: 600;
-                    }
-                    
-                    .post-comments-link {
-                        color: var(--text-secondary);
-                        font-size: 14px;
-                        cursor: pointer;
-                        display: block;
-                        margin-bottom: 10px;
-                    }
-                    
-                    .post-add-comment {
-                        display: flex;
-                        border-top: 1px solid var(--border-color);
-                        padding-top: 15px;
-                    }
-                    
-                    .post-add-comment input {
-                        flex: 1;
-                        border: none;
-                        outline: none;
-                        padding: 10px 0;
-                        font-size: 14px;
-                        color: var(--text-primary);
-                    }
-                    
-                    .post-add-comment button {
-                        background: none;
-                        border: none;
-                        color: var(--primary-color);
-                        font-weight: 600;
-                        cursor: pointer;
-                        padding: 0 10px;
-                    }
-                    
-                    .post-add-comment button:disabled {
-                        color: var(--text-secondary);
-                        cursor: default;
-                        opacity: 0.7;
-                    }
-                    
-                    .notification-container {
-                        position: relative;
-                        margin-right: 15px;
-                    }
-                    
-                    #notification-btn {
-                        background: none;
-                        border: none;
-                        font-size: 20px;
-                        cursor: pointer;
-                        position: relative;
-                        color: var(--text-secondary);
-                        transition: color 0.2s ease;
-                        padding: 5px;
-                    }
-                    
-                    #notification-btn:hover {
-                        color: var(--primary-color);
-                        background-color: rgba(85, 99, 222, 0.1);
-                        border-radius: 50%;
-                        display: flex;
-                        align-items: center;
-                        justify-content: center;
-                    }
-                    
-                    #notification-count {
-                        position: absolute;
-                        top: -5px;
-                        right: -5px;
-                        background-color: var(--secondary-color);
-                        color: white;
-                        border-radius: 50%;
-                        padding: 0 6px;
-                        font-size: 12px;
-                        min-width: 20px;
-                        height: 20px;
-                        display: flex;
-                        align-items: center;
-                        justify-content: center;
-                    }
-                    
-                    .notification-panel {
-                        position: absolute;
-                        top: 100%;
-                        right: 0;
-                        width: 320px;
-                        background-color: var(--card-color);
-                        border-radius: 12px;
-                        box-shadow: 0 4px 12px rgba(0,0,0,0.15);
-                        z-index: 100;
-                        overflow: hidden;
-                        display: none;
-                    }
-                    
-                    .notification-header {
-                        background: linear-gradient(to right, var(--primary-color), var(--secondary-color));
-                        color: white;
-                        padding: 12px 15px;
-                        text-align: center;
-                        font-weight: 600;
-                    }
-                    
-                    .notifications-list {
-                        max-height: 400px;
-                        overflow-y: auto;
-                    }
-                    
-                    .notification-item {
-                        padding: 12px 15px;
-                        border-bottom: 1px solid var(--border-color);
-                    }
-                    
-                    .notification-item:last-child {
-                        border-bottom: none;
-                    }
-                    
-                    .notification-content {
-                        margin-bottom: 8px;
-                        color: var(--text-primary);
-                    }
-                    
-                    .notification-actions {
-                        display: flex;
-                        gap: 10px;
-                    }
-                    
-                    .notification-actions button {
-                        padding: 6px 12px;
-                        border: none;
-                        border-radius: 6px;
-                        cursor: pointer;
-                        font-weight: 500;
-                        font-size: 14px;
-                        transition: all 0.2s ease;
-                    }
-                    
-                    .accept-btn {
-                        background-color: var(--primary-color);
-                        color: white;
-                    }
-                    
-                    .accept-btn:hover {
-                        background-color: var(--primary-dark);
-                    }
-                    
-                    .reject-btn {
-                        background-color: var(--error-color);
-                        color: white;
-                    }
-                    
-                    .reject-btn:hover {
-                        background-color: #c0392b;
-                    }
-                    
-                    .notification-empty {
-                        padding: 20px;
-                        text-align: center;
-                        color: var(--text-secondary);
-                        font-style: italic;
-                    }
-                    
-                    .notification-time {
-                        font-size: 12px;
-                        color: var(--text-secondary);
-                    }
-                    
-                    .empty-state {
-                        text-align: center;
-                        padding: 40px 20px;
-                        background-color: var(--card-color);
-                        border-radius: 16px;
-                        box-shadow: 0 4px 12px rgba(0,0,0,0.08);
-                    }
-                    
-                    .empty-state h3 {
-                        color: var(--text-primary);
-                        margin-bottom: 10px;
-                    }
-                    
-                    .empty-state p {
-                        color: var(--text-secondary);
-                    }
-
-                    .loading-spinner {
-                        display: flex;
-                        justify-content: center;
-                        align-items: center;
-                        padding: 20px;
-                        color: var(--text-secondary);
-                    }
-                    
-                    .spinner {
-                        width: 40px;
-                        height: 40px;
-                        border: 4px solid rgba(0, 0, 0, 0.1);
-                        border-left-color: var(--primary-color);
-                        border-radius: 50%;
-                        animation: spin 1s linear infinite;
-                    }
-                    
-                    @keyframes spin {
-                        to { transform: rotate(360deg); }
-                    }
-                    
-                    #load-more-container {
-                        text-align: center;
-                        padding: 20px;
-                        display: none;
-                    }
-                </style>
+                }
                 
-                <div class="home-page">
-                    <header class="header">
-                        <h1 class="app-logo">Photogram</h1>
-                        <nav>
-                            <div class="notification-container">
-                                <button id="notification-btn">
-                                    <i class="fas fa-bell"></i>
-                                    <span id="notification-count">0</span>
-                                </button>
-                                <div id="notification-panel" class="notification-panel">
-                                    <div class="notification-header">Bildirimler</div>
-                                    <div id="notifications-list" class="notifications-list">
-                                        <div class="notification-empty">Yükleniyor...</div>
-                                    </div>
-                                </div>
-                            </div>
-                            <a href="#" id="profile-link">Profilim</a>
-                            <button id="logout-button">Çıkış Yap</button>
-                        </nav>
-                    </header>
+                .header {
+                    display: flex;
+                    justify-content: space-between;
+                    align-items: center;
+                    padding: 15px 20px;
+                    background: var(--card-color);
+                    border-bottom: 1px solid var(--border-color);
+                    position: sticky;
+                    top: 0;
+                    z-index: 100;
+                    box-shadow: var(--shadow-sm);
+                }
+                
+                .logo {
+                    font-size: 24px;
+                    font-weight: 700;
+                    color: var(--primary-color);
+                    background: linear-gradient(45deg, var(--primary-color), var(--secondary-color));
+                    -webkit-background-clip: text;
+                    -webkit-text-fill-color: transparent;
+                }
+                
+                .search-bar {
+                    position: relative;
+                    width: 300px;
+                }
+                
+                @media (max-width: 768px) {
+                    .search-bar {
+                        width: 200px;
+                    }
+                }
+                
+                @media (max-width: 576px) {
+                    .search-bar {
+                        width: 150px;
+                    }
+                }
+                
+                .search-bar input {
+                    width: 100%;
+                    padding: 10px 15px;
+                    border-radius: 20px;
+                    border: 1px solid var(--border-color);
+                    background: var(--gray-100);
+                    font-size: 14px;
+                }
+                
+                .search-bar input:focus {
+                    border-color: var(--primary-color);
+                    box-shadow: 0 0 0 2px rgba(46, 125, 50, 0.1);
+                    background: #fff;
+                }
+                
+                .search-results {
+                    position: absolute;
+                    top: 45px;
+                    left: 0;
+                    width: 300px;
+                    background: var(--card-color);
+                    border-radius: 8px;
+                    box-shadow: var(--shadow-lg);
+                    z-index: 10;
+                    max-height: 400px;
+                    overflow-y: auto;
+                    display: none;
+                }
+                
+                .main-content {
+                    width: 100%;
+                }
+                
+                .stories-section {
+                    margin-bottom: 25px;
+                    background: var(--card-color);
+                    border-radius: 10px;
+                    padding: 15px;
+                    box-shadow: var(--shadow-sm);
+                    border: 1px solid var(--gray-200);
+                    position: relative;
+                    overflow: hidden;
+                }
+                
+                .stories-section::before {
+                    content: '';
+                    position: absolute;
+                    top: 0;
+                    left: 0;
+                    width: 5px;
+                    height: 100%;
+                    background: linear-gradient(to bottom, var(--primary-color), var(--secondary-color));
+                }
+                
+                .stories-container {
+                    display: flex;
+                    overflow-x: auto;
+                    gap: 15px;
+                    padding: 5px 0;
+                    scrollbar-width: none;
+                }
+                
+                .stories-container::-webkit-scrollbar {
+                    display: none;
+                }
+                
+                .posts-section {
+                    display: flex;
+                    flex-direction: column;
+                    gap: 20px;
+                }
+                
+                .post-card {
+                    background: var(--card-color);
+                    border-radius: 10px;
+                    overflow: hidden;
+                    box-shadow: var(--shadow-sm);
+                    border: 1px solid var(--gray-200);
+                    transition: box-shadow 0.2s, transform 0.2s;
+                }
+                
+                .post-card:hover {
+                    box-shadow: var(--shadow-md);
+                    transform: translateY(-2px);
+                }
+                
+                .post-header {
+                    display: flex;
+                    align-items: center;
+                    padding: 12px 15px;
+                    border-bottom: 1px solid var(--gray-100);
+                }
+                
+                .post-header img {
+                    width: 40px;
+                    height: 40px;
+                    border-radius: 50%;
+                    object-fit: cover;
+                    margin-right: 12px;
+                    border: 2px solid var(--primary-light);
+                }
+                
+                .post-username {
+                    font-weight: 600;
+                    margin-bottom: 2px;
+                    color: var(--text-primary);
+                }
+                
+                .post-time {
+                    font-size: 12px;
+                    color: var(--text-secondary);
+                }
+                
+                .post-image-container {
+                    width: 100%;
+                    display: flex;
+                    justify-content: center;
+                    align-items: center;
+                    background-color: #000;
+                }
+                
+                .post-image {
+                    width: 100%;
+                    max-height: 600px;
+                    object-fit: contain;
+                }
+                
+                .post-actions {
+                    display: flex;
+                    padding: 12px 15px;
+                    border-top: 1px solid var(--gray-100);
+                }
+                
+                .post-action-btn {
+                    background: none;
+                    border: none;
+                    padding: 8px 12px;
+                    margin-right: 12px;
+                    color: var(--text-primary);
+                    display: flex;
+                    align-items: center;
+                    transition: all 0.2s;
+                    border-radius: 8px;
+                }
+                
+                .post-action-btn:hover {
+                    background-color: var(--gray-100);
+                }
+                
+                .post-action-btn i {
+                    font-size: 18px;
+                    margin-right: 6px;
+                }
+                
+                .post-action-btn.liked {
+                    color: #e74c3c;
+                }
+                
+                .post-action-btn.liked i {
+                    color: #e74c3c;
+                }
+                
+                .post-likes {
+                    padding: 0 15px 8px 15px;
+                    font-weight: 600;
+                    color: var(--text-primary);
+                }
+                
+                .post-caption {
+                    padding: 0 15px 12px 15px;
+                    color: var(--text-primary);
+                }
+                
+                .post-comments-section {
+                    padding: 0 15px 12px 15px;
+                    border-bottom: 1px solid var(--gray-100);
+                }
+                
+                .post-comment {
+                    margin-bottom: 6px;
+                }
+                
+                .post-comment-username {
+                    font-weight: 600;
+                    margin-right: 5px;
+                }
+                
+                .post-add-comment {
+                    display: flex;
+                    padding: 12px 15px;
+                }
+                
+                .post-comment-input {
+                    flex: 1;
+                    border: none;
+                    padding: 8px 0;
+                    outline: none;
+                    color: var(--text-primary);
+                    background: transparent;
+                }
+                
+                .post-comment-submit {
+                    border: none;
+                    background: none;
+                    color: var(--primary-color);
+                    font-weight: 600;
+                    cursor: pointer;
+                }
+                
+                .post-comment-submit:disabled {
+                    opacity: 0.5;
+                    cursor: not-allowed;
+                }
+                
+                .sidebar {
+                    position: sticky;
+                    top: 85px;
+                }
+                
+                .user-profile {
+                    display: flex;
+                    align-items: center;
+                    padding: 15px;
+                    margin-bottom: 20px;
+                    background: var(--card-color);
+                    border-radius: 10px;
+                    box-shadow: var(--shadow-sm);
+                    border: 1px solid var(--gray-200);
+                }
+                
+                .user-profile img {
+                    width: 56px;
+                    height: 56px;
+                    border-radius: 50%;
+                    margin-right: 15px;
+                    object-fit: cover;
+                    border: 3px solid var(--primary-light);
+                }
+                
+                .user-profile-info h3 {
+                    margin: 0;
+                    color: var(--text-primary);
+                }
+                
+                .user-profile-info p {
+                    margin: 0;
+                    color: var(--text-secondary);
+                }
+                
+                .suggestions-container {
+                    background: var(--card-color);
+                    border-radius: 10px;
+                    padding: 15px;
+                    box-shadow: var (--shadow-sm);
+                    border: 1px solid var(--gray-200);
+                    position: relative;
+                    overflow: hidden;
+                }
+                
+                .suggestions-container::before {
+                    content: '';
+                    position: absolute;
+                    top: 0;
+                    right: 0;
+                    width: 5px;
+                    height: 100%;
+                    background: linear-gradient(to bottom, var(--secondary-color), var(--primary-color));
+                }
+                
+                .suggestions-title {
+                    display: flex;
+                    justify-content: space-between;
+                    margin-bottom: 15px;
+                    color: var(--text-primary);
+                }
+                
+                .suggestion-item {
+                    display: flex;
+                    align-items: center;
+                    justify-content: space-between;
+                    padding: 8px 0;
+                    border-bottom: 1px solid var(--gray-100);
+                }
+                
+                .suggestion-user {
+                    display: flex;
+                    align-items: center;
+                }
+                
+                .suggestion-user img {
+                    width: 32px;
+                    height: 32px;
+                    border-radius: 50%;
+                    margin-right: 10px;
+                    object-fit: cover;
+                    border: 2px solid var(--gray-300);
+                }
+                
+                .suggestion-user-info h4 {
+                    margin: 0;
+                    font-size: 14px;
+                    color: var(--text-primary);
+                }
+                
+                .suggestion-user-info p {
+                    margin: 0;
+                    font-size: 12px;
+                    color: var(--text-secondary);
+                }
+                
+                .story-item {
+                    display: flex;
+                    flex-direction: column;
+                    align-items: center;
+                    cursor: pointer;
+                }
+                
+                .story-item img {
+                    width: 60px;
+                    height: 60px;
+                    border-radius: 50%;
+                    object-fit: cover;
+                    border: 3px solid transparent;
+                    background-image: linear-gradient(#fff, #fff), 
+                                      linear-gradient(45deg, var(--primary-color), var(--secondary-color));
+                    background-origin: border-box;
+                    background-clip: content-box, border-box;
+                    margin-bottom: 6px;
+                }
+                
+                .story-item span {
+                    font-size: 12px;
+                    font-weight: 500;
+                    color: var(--text-primary);
+                    max-width: 70px;
+                    text-overflow: ellipsis;
+                    overflow: hidden;
+                    white-space: nowrap;
+                    text-align: center;
+                }
+                
+                .nav-actions {
+                    display: flex;
+                    align-items: center;
+                    gap: 10px;
+                }
+                
+                .nav-item {
+                    position: relative;
+                }
+                
+                .notification-dot {
+                    position: absolute;
+                    top: -2px;
+                    right: -2px;
+                    width: 8px;
+                    height: 8px;
+                    background-color: var(--error-color);
+                    border-radius: 50%;
+                }
+                
+                .new-post-btn {
+                    position: fixed;
+                    bottom: 20px;
+                    right: 20px;
+                    background: linear-gradient(45deg, var(--primary-color), var(--secondary-color));
+                    color: white;
+                    border-radius: 50%;
+                    width: 60px;
+                    height: 60px;
+                    display: flex;
+                    align-items: center;
+                    justify-content: center;
+                    font-size: 24px;
+                    box-shadow: var(--shadow-lg);
+                    border: none;
+                    cursor: pointer;
+                    transition: all 0.3s;
+                    z-index: 99;
+                }
+                
+                .new-post-btn:hover {
+                    transform: scale(1.05) translateY(-5px);
+                    box-shadow: var(--shadow-xl);
+                }
+                
+                .loading-container {
+                    display: flex;
+                    flex-direction: column;
+                    align-items: center;
+                    justify-content: center;
+                    padding: 50px 0;
+                }
+                
+                .loading-container .spinner {
+                    margin-bottom: 15px;
+                }
+            </style>
+            
+            <!-- Header -->
+            <header class="header">
+                <div class="logo">Photogram</div>
+                
+                <div class="search-bar">
+                    <input type="text" id="search-input" placeholder="Kullanıcı ara...">
+                    <div class="search-results" id="search-results"></div>
+                </div>
+                
+                <div class="nav-actions">
+                    <div class="nav-item">
+                        <button id="home-btn" class="btn btn-ghost btn-icon" title="Ana Sayfa">
+                            <i class="fas fa-home"></i>
+                        </button>
+                    </div>
                     
-                    <main class="home-content">
-                        <div>
-                            <div class="search-box">
-                                <input type="text" id="search-input" placeholder="Kullanıcı ara...">
-                                <div id="search-results" style="display: none;"></div>
+                    <div class="nav-item">
+                        <button id="messages-btn" class="btn btn-ghost btn-icon" title="Mesajlar">
+                            <i class="far fa-paper-plane"></i>
+                            <span id="messages-badge" class="badge badge-danger badge-dot" style="display: none;"></span>
+                        </button>
+                    </div>
+                    
+                    <div class="nav-item">
+                        <button id="notification-btn" class="btn btn-ghost btn-icon" title="Bildirimler">
+                            <i class="far fa-heart"></i>
+                            <span id="notification-count" class="badge badge-danger badge-dot" style="display: none;"></span>
+                        </button>
+                        
+                        <div id="notification-panel" class="notifications-menu" style="display: none;">
+                            <div class="notifications-header">
+                                <h3 style="margin: 0; font-size: 16px;">Bildirimler</h3>
                             </div>
-                            
-                            <div class="posts-container" id="posts-container">
-                                <div class="loading-spinner" id="initial-loading">
-                                    <div class="spinner"></div>
-                                </div>
-                            </div>
-                            
-                            <div id="load-more-container">
-                                <div class="loading-spinner">
-                                    <div class="spinner"></div>
-                                </div>
-                            </div>
+                            <div id="notifications-list" class="notifications-list"></div>
+                        </div>
+                    </div>
+                    
+                    <div class="nav-item">
+                        <button id="profile-link" class="btn btn-ghost btn-icon" title="Profil">
+                            <img src="${
+                                userProfile.profileImage ||
+                                userProfile.profilePicture ||
+                                'data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHZpZXdCb3g9IjAgMCAyMDAgMjAwIj48Y2lyY2xlIGN4PSIxMDAiIGN5PSIxMDAiIHI9IjEwMCIgZmlsbD0iI2U2ZTZlNiIvPjxjaXJjbGUgY3g9IjEwMCIgY3k9IjgwIiByPSI0MCIgZmlsbD0iI2IzYjNiMyIvPjxwYXRoIGQ9Ik0xNjAgMTgwYzAtMzMuMTM3LTI2Ljg2My02MC02MC02MHMtNjAgMjYuODYzLTYwIDYwaDEyMHoiIGZpbGw9IiNiM2IzYjMiLz48L3N2Zz4='
+                            }" 
+                            alt="Profile" 
+                            style="width: 32px; height: 32px; border-radius: 50%; object-fit: cover; border: 2px solid var(--primary-light);">
+                        </button>
+                    </div>
+                    
+                    <div class="nav-item">
+                        <button id="logout-button" class="btn btn-ghost btn-icon" title="Çıkış Yap">
+                            <i class="fas fa-sign-out-alt"></i>
+                        </button>
+                    </div>
+                </div>
+            </header>
+            
+            <div class="home-container">
+                <section class="main-content">
+                    <div class="stories-section">
+                        <div class="stories-container">
+                            ${storiesHTML}
+                        </div>
+                    </div>
+                    
+                    <section class="posts-section">
+                        <div id="initial-loading" class="loading-container">
+                            <div class="spinner spinner-lg"></div>
+                            <p>Gönderiler yükleniyor...</p>
+                        </div>
+                        <div id="posts-container"></div>
+                        <div id="load-more-container" style="display: none; text-align: center; padding: 20px;">
+                            <button class="btn btn-light load-more-btn">
+                                <span class="spinner spinner-sm" style="margin-right: 8px; display: none;"></span>
+                                Daha Fazla Göster
+                            </button>
+                        </div>
+                    </section>
+                </section>
+                
+                <aside class="sidebar">
+                    <div class="user-profile">
+                        <img src="${
+                            userProfile.profileImage ||
+                            'data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHZpZXdCb3g9IjAgMCAyMDAgMjAwIj48Y2lyY2xlIGN4PSIxMDAiIGN5PSIxMDAiIHI9IjEwMCIgZmlsbD0iI2U2ZTZlNiIvPjxjaXJjbGUgY3g9IjEwMCIgY3k9IjgwIiByPSI0MCIgZmlsbD0iI2IzYjNiMyIvPjxwYXRoIGQ9Ik0xNjAgMTgwYzAtMzMuMTM3LTI2Ljg2My02MC02MC02MHMtNjAgMjYuODYzLTYwIDYwaDEyMHoiIGZpbGw9IiNiM2IzYjMiLz48L3N2Zz4='
+                        }" alt="${userProfile.username}">
+                        <div class="user-profile-info">
+                            <h3>${userProfile.username}</h3>
+                            <p>${userProfile.fullName || ''}</p>
+                        </div>
+                    </div>
+                    
+                    <div class="suggestions-container">
+                        <div class="suggestions-title">
+                            <strong>Senin İçin Öneriler</strong>
+                            <a href="#" style="color: var(--primary-color); font-size: 14px; text-decoration: none;">Tümünü Gör</a>
                         </div>
                         
-                        <div class="sidebar">
-                            <div class="profile-card post-card">
-                                <div class="post-header">
-                                    <img 
-                                        src="${
-                                            userProfile.profilePicture ||
-                                            userProfile.profileImage ||
-                                            'data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHZpZXdCb3g9IjAgMCAyMDAgMjAwIj48Y2lyY2xlIGN4PSIxMDAiIGN5PSIxMDAiIHI9IjEwMCIgZmlsbD0iI2U2ZTZlNiIvPjxjaXJjbGUgY3g9IjEwMCIgY3k9IjgwIiByPSI0MCIgZmlsbD0iI2IzYjNiMyIvPjxwYXRoIGQ9Ik0xNjAgMTgwYzAtMzMuMTM3LTI2Ljg2My02MC02MC02MHMtNjAgMjYuODYzLTYwIDYwaDEyMHoiIGZpbGw9IiNiM2IzYjMiLz48L3N2Zz4='
-                                        }" 
-                                        alt="${
-                                            userProfile.username || 'Kullanıcı'
-                                        }"
-                                        class="user-avatar"
-                                    >
-                                    <div>
-                                        <div class="username">@${
-                                            userProfile.username || 'kullanici'
-                                        }</div>
-                                        <div style="color: var(--text-secondary); font-size: 14px;">
-                                            ${userProfile.fullName || ''}
-                                        </div>
-                                    </div>
-                                </div>
-                                
-                                <div style="padding: 15px;">
-                                    <button class="new-post-btn" style="
-                                        background-color: var(--primary-color);
-                                        color: white;
-                                        border: none;
-                                        border-radius: 8px;
-                                        padding: 10px 16px;
-                                        font-weight: 600;
-                                        cursor: pointer;
-                                        width: 100%;
-                                        transition: background-color 0.2s ease;
-                                    ">
-                                        Yeni Gönderi Oluştur
-                                    </button>
-                                </div>
-                            </div>
-                            
-                            <div class="suggested-users post-card" style="margin-top: 30px;">
-                                <div style="padding: 15px; border-bottom: 1px solid var(--border-color);">
-                                    <h3 style="margin: 0; color: var(--text-primary);">Senin İçin Öneriler</h3>
-                                </div>
-                                
-                                <div style="padding: 15px;" id="suggested-users-container">
-                                    ${
-                                        suggestedUsers.length > 0
-                                            ? suggestedUsers
-                                                  .map(
-                                                      (user) => `
-                                                <div style="display: flex; align-items: center; margin-bottom: 15px;">
-                                                    <img src="${
-                                                        user.profilePicture ||
-                                                        user.profileImage ||
-                                                        'data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHZpZXdCb3g9IjAgMCAyMDAgMjAwIj48Y2lyY2xlIGN4PSIxMDAiIGN5PSIxMDAiIHI9IjEwMCIgZmlsbD0iI2U2ZTZlNiIvPjxjaXJjbGUgY3g9IjEwMCIgY3k9IjgwIiByPSI0MCIgZmlsbD0iI2IzYjNiMyIvPjxwYXRoIGQ9Ik0xNjAgMTgwYzAtMzMuMTM3LTI2Ljg2My02MC02MC02MHMtNjAgMjYuODYzLTYwIDYwaDEyMHoiIGZpbGw9IiNiM2IzYjMiLz48L3N2Zz4='
-                                                    }" 
-                                                         alt="${
-                                                             user.username ||
-                                                             'Kullanıcı'
-                                                         }" 
-                                                         class="user-avatar" 
-                                                         style="width: 32px; height: 32px; margin-right: 10px;">
-                                                    <div style="flex: 1;">
-                                                        <div class="username">@${
-                                                            user.username
-                                                        }</div>
-                                                        <div style="color: var(--text-secondary); font-size: 12px;">${
-                                                            user.fullName || ''
-                                                        }</div>
-                                                    </div>
-                                                    <button 
-                                                        class="follow-suggestion-btn" 
-                                                        data-user-id="${
-                                                            user.uid
-                                                        }" 
-                                                        data-username="${
-                                                            user.username
-                                                        }"
-                                                        style="
-                                                            background: none; 
-                                                            border: none; 
-                                                            color: var(--primary-color);
-                                                            font-weight: 600;
-                                                            cursor: pointer;
-                                                        "
-                                                    >
-                                                        Takip Et
-                                                    </button>
-                                                </div>
-                                            `
-                                                  )
-                                                  .join('')
-                                            : `
-                                                <div style="text-align: center; padding: 10px; color: var(--text-secondary);">
-                                                    Öneri bulunmuyor
-                                                </div>
-                                            `
-                                    }
-                                </div>
-                            </div>
-                        </div>
-                    </main>
-                </div>
-            `;
+                        ${suggestedUsersHTML}
+                    </div>
+                </aside>
+            </div>
+            
+            <button class="new-post-btn" title="Yeni Gönderi">
+                <i class="fas fa-plus"></i>
+            </button>
+        `;
 
             // Event listener'ları ayarla
             this.setupEventListeners();
@@ -837,25 +876,25 @@ class HomePage {
         document
             .querySelectorAll('.follow-suggestion-btn')
             .forEach((button) => {
-                button.addEventListener('click', async (e) => {
-                    const username = e.target.dataset.username;
-                    const userId = e.target.dataset.userId;
+                button.addEventListener('click', async () => {
+                    const username = button.getAttribute('data-username');
+                    button.textContent = 'Takip Ediliyor...';
+                    button.disabled = true;
+                    button.classList.remove('btn-primary');
+                    button.classList.add('btn-light');
 
                     try {
-                        const result = await this.followUser(username);
-
-                        if (result === 'pending') {
-                            e.target.textContent = 'İstek Gönderildi';
-                            e.target.disabled = true;
-                            e.target.style.color = 'var(--text-secondary)';
-                        } else if (result === true) {
-                            e.target.textContent = 'Takip Ediliyor';
-                            e.target.disabled = true;
-                            e.target.style.color = 'var(--success-color)';
-                        }
+                        await this.followUser(username);
+                        button.textContent = 'Takip Ediliyor';
                     } catch (error) {
-                        console.error('Takip etme hatası:', error);
-                        alert('Takip etme işlemi sırasında bir hata oluştu');
+                        console.error(
+                            `${username} kullanıcısını takip hatası:`,
+                            error
+                        );
+                        button.textContent = 'Tekrar Dene';
+                        button.disabled = false;
+                        button.classList.remove('btn-light');
+                        button.classList.add('btn-primary');
                     }
                 });
             });
@@ -880,6 +919,16 @@ class HomePage {
                 this.loadMorePosts();
             }
         });
+
+        // Mesajlar butonu
+        document
+            .getElementById('messages-btn')
+            .addEventListener('click', () => {
+                window.location.href = '/messages';
+            });
+
+        // Okunmamış mesajları kontrol et
+        this.checkUnreadMessages();
     }
 
     static async followUser(username) {
@@ -904,134 +953,219 @@ class HomePage {
         const initialLoading = document.getElementById('initial-loading');
 
         if (this.isLoading) return;
+        this.isLoading = true;
 
         try {
-            this.isLoading = true;
-
-            if (!isInitialLoad) {
-                loadMoreContainer.style.display = 'block';
+            // İlk yükleme ise önceki gönderileri temizle
+            if (isInitialLoad) {
+                postsContainer.innerHTML = '';
+                this.lastVisiblePost = null;
+                this.allPostsLoaded = false;
             }
 
+            // Gönderileri yükle
+            const currentUser = AuthService.getCurrentUser();
+            if (!currentUser) {
+                throw new Error('Kullanıcı oturumu açık değil');
+            }
+
+            // Posts'ları getir
             const posts = await PostService.getFollowedUsersPosts(
                 this.postsPerPage,
                 this.lastVisiblePost
             );
 
-            // İlk yüklemede yükleniyor göstergesini kaldır
-            if (isInitialLoad && initialLoading) {
-                postsContainer.removeChild(initialLoading);
-            }
-
-            if (posts.length === 0) {
-                if (isInitialLoad) {
-                    postsContainer.innerHTML = `
-                        <div class="empty-state">
-                            <h3>Henüz gönderi yok</h3>
-                            <p>Takip ettiğiniz kişilerin gönderileri burada görünecek</p>
-                        </div>
-                    `;
+            // Güvenli bir şekilde loading elementini kaldır
+            if (initialLoading) {
+                // Parent kontrolü yapalım
+                if (initialLoading.parentNode) {
+                    initialLoading.parentNode.removeChild(initialLoading);
+                } else {
+                    // Parent yoksa görünürlüğü gizleyelim
+                    initialLoading.style.display = 'none';
                 }
-
-                this.allPostsLoaded = true;
-                loadMoreContainer.innerHTML = `
-                    <p style="color: var(--text-secondary);">Tüm gönderiler yüklendi</p>
-                `;
-                return;
             }
 
-            // Son yüklenen gönderiyi kaydet (sonraki yükleme için)
-            this.lastVisiblePost = posts[posts.length - 1].id;
+            // Son gönderiyi kaydet (pagination için)
+            if (posts.length > 0) {
+                this.lastVisiblePost = posts[posts.length - 1].id;
+            }
 
-            const postsHTML = posts
-                .map(
-                    (post) => `
-                <div class="post-card" data-post-id="${post.id}">
-                    <div class="post-header">
-                        <img src="${
-                            post.profileImage ||
-                            post.profilePicture ||
-                            'data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHZpZXdCb3g9IjAgMCAyMDAgMjAwIj48Y2lyY2xlIGN4PSIxMDAiIGN5PSIxMDAiIHI9IjEwMCIgZmlsbD0iI2U2ZTZlNiIvPjxjaXJjbGUgY3g9IjEwMCIgY3k9IjgwIiByPSI0MCIgZmlsbD0iI2IzYjNiMyIvPjxwYXRoIGQ9Ik0xNjAgMTgwYzAtMzMuMTM3LTI2Ljg2My02MC02MC02MHMtNjAgMjYuODYzLTYwIDYwaDEyMHoiIGZpbGw9IiNiM2IzYjMiLz48L3N2Zz4='
-                        }" 
-                             alt="${post.username}" 
-                             class="user-avatar"
-                             style="cursor: pointer"
-                             onclick="window.location.href='/profile/${
-                                 post.username
-                             }'">
-                        <strong class="username" style="cursor: pointer" 
-                             onclick="window.location.href='/profile/${
-                                 post.username
-                             }'">${post.username}</strong>
-                        <span style="margin-left: auto; font-size: 12px; color: var(--text-secondary);">
-                            ${this.formatPostTime(post.createdAt)}
-                        </span>
+            // Tüm gönderiler yüklendi mi kontrol et
+            if (posts.length < this.postsPerPage) {
+                this.allPostsLoaded = true;
+            }
+
+            // Boş durumu kontrol et
+            if (posts.length === 0 && isInitialLoad) {
+                postsContainer.innerHTML = `
+                    <div class="empty-state" style="text-align: center; padding: 40px;">
+                        <div style="font-size: 72px; margin-bottom: 20px;">📷</div>
+                        <h3>Henüz gönderi yok</h3>
+                        <p style="color: var(--text-secondary);">Takip ettiğiniz kişiler gönderi paylaştığında burada görünecek.</p>
+                        <button class="btn btn-primary" style="margin-top: 20px;" id="explore-users-btn">
+                            Keşfet
+                        </button>
                     </div>
-                    <img class="post-image" src="${
-                        post.imageUrl
-                    }" alt="Post image">
-                    <div class="post-actions">
-                        <div class="action-icons">
-                            <button class="like-button" data-post-id="${
-                                post.id
-                            }" style="background:none; border:none; cursor:pointer; display:flex; align-items:center; padding:0;">
-                                <i class="fas fa-heart" style="font-size: 18px;"></i> <span style="margin-left:5px;">${
-                                    post.likes || 0
-                                }</span>
+                `;
+
+                // Explore butonu
+                const exploreBtn = document.getElementById('explore-users-btn');
+                if (exploreBtn) {
+                    exploreBtn.addEventListener('click', () => {
+                        // Keşfet sayfasına yönlendir
+                        // Bu kısım geliştirilebilir
+                        alert('Keşfet özelliği yapım aşamasında!');
+                    });
+                }
+            } else if (posts.length > 0) {
+                // HTML gösterim formatını düzenle
+                const postsHTML = posts
+                    .map(
+                        (post) => `
+                    <article class="post-card" data-post-id="${post.id}">
+                        <div class="post-header">
+                            <img src="${post.profileImage}" alt="${
+                            post.username
+                        }" style="width: 40px; height: 40px; border-radius: 50%; object-fit: cover; margin-right: 10px;">
+                            <div class="post-user-info">
+                                <div class="post-username">${
+                                    post.username
+                                }</div>
+                                <div class="post-time">${this.formatPostTime(
+                                    post.createdAt
+                                )}</div>
+                            </div>
+                        </div>
+                        
+                        <div class="post-image-container">
+                            <img class="post-image" src="${
+                                post.imageUrl
+                            }" alt="Post by ${post.username}">
+                        </div>
+                        
+                        <div class="post-actions">
+                            <button class="post-action-btn like-button ${
+                                post.likedByMe ? 'liked' : ''
+                            }" data-post-id="${post.id}">
+                                <i class="${
+                                    post.likedByMe ? 'fas' : 'far'
+                                } fa-heart"></i>
+                                <span>${post.likes || 0}</span>
                             </button>
-                            <button class="comment-button" data-post-id="${
+                            <button class="post-action-btn">
+                                <i class="far fa-comment"></i>
+                                <span>${post.comments?.length || 0}</span>
+                            </button>
+                            <button class="post-action-btn share-post-button" data-id="${
                                 post.id
-                            }" style="background:none; border:none; cursor:pointer; display:flex; align-items:center; padding:0; margin-left:15px;">
-                                <i class="fas fa-comment" style="font-size: 18px;"></i> <span style="margin-left:5px;">Yorum</span>
+                            }" title="Gönderiyi paylaş">
+                                <i class="far fa-paper-plane"></i>
                             </button>
                         </div>
+                        
+                        <div class="post-likes">
+                            <span>${post.likes || 0} beğenme</span>
+                        </div>
+                        
                         <div class="post-caption">
                             <strong>${post.username}</strong> ${
-                        post.caption || ''
-                    }
+                            post.caption || ''
+                        }
                         </div>
-                    </div>
-                    <div class="post-add-comment">
-                        <input type="text" placeholder="Yorum ekle..." id="comment-input-${
-                            post.id
-                        }">
-                        <button class="send-comment-btn" data-post-id="${
-                            post.id
-                        }">Gönder</button>
-                    </div>
-                </div>
-            `
-                )
-                .join('');
+                        
+                        <div class="post-comments-section">
+                            ${
+                                post.comments
+                                    ? this.renderPostComments(
+                                          post.comments.slice(0, 2)
+                                      )
+                                    : ''
+                            }
+                            ${
+                                post.comments && post.comments.length > 2
+                                    ? `<div style="margin-top: 8px; font-size: 14px; color: var(--text-secondary);">${
+                                          post.comments.length - 2
+                                      } yorum daha...</div>`
+                                    : ''
+                            }
+                        </div>
+                        
+                        <div class="post-add-comment">
+                            <input type="text" class="post-comment-input" id="comment-input-${
+                                post.id
+                            }" placeholder="Yorum yaz...">
+                            <button class="post-comment-submit send-comment-btn" data-post-id="${
+                                post.id
+                            }" disabled>Paylaş</button>
+                        </div>
+                    </article>
+                `
+                    )
+                    .join('');
 
-            if (isInitialLoad) {
-                postsContainer.innerHTML = postsHTML;
-            } else {
-                postsContainer.insertAdjacentHTML('beforeend', postsHTML);
+                // İlk yüklemedeyse içeriği değiştir, değilse ekle
+                if (isInitialLoad) {
+                    postsContainer.innerHTML = postsHTML;
+                } else {
+                    postsContainer.insertAdjacentHTML('beforeend', postsHTML);
+                }
+
+                // Daha fazla göster butonunu görünür yap
+                if (!this.allPostsLoaded) {
+                    loadMoreContainer.style.display = 'block';
+
+                    // Yükleme butonu işaretleyiciyi kaldır
+                    const loadingSpinner =
+                        loadMoreContainer.querySelector('.spinner');
+                    if (loadingSpinner) {
+                        loadingSpinner.style.display = 'none';
+                    }
+
+                    // Butonu aktif et
+                    const loadMoreBtn =
+                        loadMoreContainer.querySelector('.load-more-btn');
+                    if (loadMoreBtn) {
+                        loadMoreBtn.disabled = false;
+                        loadMoreBtn.textContent = 'Daha Fazla Göster';
+
+                        // Eğer event listener daha önce eklenmediyse
+                        if (!loadMoreBtn.getAttribute('data-has-listener')) {
+                            loadMoreBtn.addEventListener('click', () => {
+                                this.loadMorePosts();
+                            });
+                            loadMoreBtn.setAttribute(
+                                'data-has-listener',
+                                'true'
+                            );
+                        }
+                    }
+                } else {
+                    loadMoreContainer.style.display = 'none';
+                }
+
+                // Etkileşimleri ayarla
+                this.setupPostInteractions();
             }
-
-            // Post etkileşim butonlarına event listener ekle
-            this.setupPostInteractions();
-
-            // Yükleme tamamlandı
-            this.isLoading = false;
-            loadMoreContainer.style.display = 'none';
         } catch (error) {
             console.error('Gönderiler yüklenirken hata:', error);
 
-            if (isInitialLoad) {
-                postsContainer.innerHTML = `
-                    <div class="error-state">
-                        <h3>Gönderiler yüklenemedi</h3>
-                        <p>Lütfen daha sonra tekrar deneyin</p>
-                        <button onclick="HomePage.loadPosts()" class="btn btn-primary" style="margin-top: 15px;">Tekrar Dene</button>
-                    </div>
-                `;
-            } else {
-                loadMoreContainer.innerHTML = `
-                    <button onclick="HomePage.loadMorePosts()" class="btn btn-primary">Tekrar Dene</button>
-                `;
+            // Yükleme göstergesini güvenli bir şekilde gizle
+            if (initialLoading && initialLoading.parentNode) {
+                initialLoading.style.display = 'none';
             }
 
+            // Hata mesajını göster
+            if (postsContainer) {
+                postsContainer.innerHTML = `
+                    <div class="alert alert-error" style="text-align: center; margin-top: 20px;">
+                        <p>Gönderiler yüklenirken bir hata oluştu.</p>
+                        <button class="btn btn-primary btn-sm" style="margin-top: 10px;" 
+                                onclick="window.HomePage.loadPosts(true)">Tekrar Dene</button>
+                    </div>
+                `;
+            }
+        } finally {
             this.isLoading = false;
         }
     }
@@ -1046,17 +1180,61 @@ class HomePage {
         // Like butonları için event listener
         document.querySelectorAll('.like-button').forEach((button) => {
             button.addEventListener('click', async (e) => {
-                const postId = e.currentTarget.dataset.postId;
                 try {
-                    await PostService.likePost(postId);
-                    const currentLikes = parseInt(
-                        e.currentTarget.textContent.trim().split(' ')[1] || 0
-                    );
-                    e.currentTarget.innerHTML = `<i class="fas fa-heart" style="color: var (--secondary-color);"></i> ${
-                        currentLikes + 1
-                    }`;
+                    const postId = e.currentTarget.dataset.postId;
+                    const isLiked = e.currentTarget.classList.contains('liked');
+
+                    if (isLiked) {
+                        // Beğeni kaldırma işlemi
+                        console.log('Beğeni kaldırma işlemi henüz eklenmedi.');
+                    } else {
+                        // Beğeni işlemi
+                        await PostService.likePost(postId);
+
+                        // UI güncelle - null kontrolü ekle
+                        if (e.currentTarget) {
+                            e.currentTarget.classList.add('liked');
+
+                            // İkon değişimi için null kontrolü
+                            const icon = e.currentTarget.querySelector('i');
+                            if (icon) {
+                                icon.classList.remove('far');
+                                icon.classList.add('fas');
+                            }
+
+                            // Beğeni sayısını artır - null kontrolü
+                            const likesSpan =
+                                e.currentTarget.querySelector('span');
+                            if (likesSpan) {
+                                const currentLikes = parseInt(
+                                    likesSpan.textContent.trim() || '0'
+                                );
+                                likesSpan.textContent = (
+                                    currentLikes + 1
+                                ).toString();
+
+                                // Beğeni sayısı yazısını da güncelle
+                                const postCard =
+                                    e.currentTarget.closest('.post-card');
+                                if (postCard) {
+                                    const likesText =
+                                        postCard.querySelector(
+                                            '.post-likes span'
+                                        );
+                                    if (likesText) {
+                                        likesText.textContent = `${
+                                            currentLikes + 1
+                                        } beğenme`;
+                                    }
+                                }
+                            }
+                        }
+                    }
                 } catch (error) {
-                    console.error('Beğenme hatası:', error);
+                    console.error('Beğeni işlemi hatası:', error);
+                    alert(
+                        'Beğeni işlemi sırasında bir hata oluştu. Lütfen tekrar deneyin.'
+                    );
                 }
             });
         });
@@ -1081,6 +1259,36 @@ class HomePage {
                 }
             });
         });
+
+        // Yorum inputu değişimi takip etme
+        document.querySelectorAll('.post-comment-input').forEach((input) => {
+            input.addEventListener('input', (e) => {
+                const submitButton = e.target.nextElementSibling;
+                submitButton.disabled = e.target.value.trim() === '';
+            });
+        });
+
+        // Gönderi paylaşma butonları için event listener
+        document.querySelectorAll('.share-post-button').forEach((button) => {
+            button.addEventListener('click', async (e) => {
+                e.stopPropagation();
+                const postId = button.dataset.id;
+                this.openSharePostModal(postId);
+            });
+        });
+    }
+
+    static renderPostComments(comments) {
+        return comments
+            .map(
+                (comment) => `
+            <div class="post-comment">
+                <span class="post-comment-username">${comment.username}</span>
+                <span class="post-comment-text">${comment.text}</span>
+            </div>
+        `
+            )
+            .join('');
     }
 
     // Yeni gönderi oluşturma modalını aç
@@ -1099,58 +1307,47 @@ class HomePage {
                 align-items: center;
                 z-index: 1000;
             ">
-                <div style="
-                    background-color: white;
-                    border-radius: 10px;
-                    padding: 20px;
+                <div class="card" style="
                     width: 90%;
                     max-width: 500px;
-                    box-shadow: 0 5px 15px rgba(0,0,0,0.3);
+                    padding: 0;
+                    overflow: hidden;
                 ">
-                    <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px;">
+                    <div class="card-header">
                         <h2 style="margin: 0; font-size: 20px;">Yeni Gönderi Oluştur</h2>
-                        <button id="close-modal" style="background: none; border: none; font-size: 24px; cursor: pointer;">&times;</button>
+                        <button id="close-modal" class="btn btn-ghost btn-icon">
+                            <i class="fas fa-times"></i>
+                        </button>
                     </div>
-                    
-                    <div id="upload-area" style="
-                        border: 2px dashed #ccc;
-                        padding: 40px 20px;
-                        text-align: center;
-                        margin-bottom: 20px;
-                        cursor: pointer;
-                    ">
-                        <i class="fas fa-cloud-upload-alt" style="font-size: 48px; color: #5563de; margin-bottom: 15px;"></i>
-                        <p>Gönderi için fotoğraf yükle</p>
-                        <input type="file" id="post-image-input" accept="image/*" style="display: none;">
+                    <div class="card-body">
+                        <div id="upload-area" style="
+                            border: 2px dashed var(--gray-300);
+                            border-radius: var(--border-radius-lg);
+                            padding: 40px 20px;
+                            text-align: center;
+                            margin-bottom: 20px;
+                            cursor: pointer;
+                            transition: all var(--transition-normal);
+                        ">
+                            <i class="fas fa-cloud-upload-alt" style="font-size: 48px; color: var(--primary-color); margin-bottom: 15px;"></i>
+                            <p>Gönderi için fotoğraf yükle</p>
+                            <input type="file" id="post-image-input" accept="image/*" style="display: none;">
+                        </div>
+                        
+                        <img id="image-preview" style="width: 100%; max-height: 300px; object-fit: contain; display: none; margin-bottom: 20px; border-radius: var(--border-radius-lg);">
+                        
+                        <div class="form-group">
+                            <label for="post-caption" style="display: block; margin-bottom: 8px; font-weight: 600;">Açıklama</label>
+                            <textarea id="post-caption" class="input" rows="4" placeholder="Gönderiniz için açıklama yazın..."></textarea>
+                        </div>
+                        
+                        <div id="post-error" class="alert alert-danger" style="margin-top: 15px; display: none;"></div>
                     </div>
-                    
-                    <img id="image-preview" style="width: 100%; max-height: 300px; object-fit: contain; display: none; margin-bottom: 20px;">
-                    
-                    <div>
-                        <label for="post-caption" style="display: block; margin-bottom: 8px; font-weight: 600;">Açıklama</label>
-                        <textarea id="post-caption" style="
-                            width: 100%;
-                            padding: 10px;
-                            border: 1px solid #ccc;
-                            border-radius: 5px;
-                            height: 100px;
-                            resize: vertical;
-                        " placeholder="Gönderiniz için açıklama yazın..."></textarea>
+                    <div class="card-footer">
+                        <button id="share-post-btn" class="btn btn-primary" disabled>
+                            <i class="fas fa-share-alt"></i> Paylaş
+                        </button>
                     </div>
-                    
-                    <div id="post-error" style="color: red; margin-top: 10px; display: none;"></div>
-                    
-                    <button id="share-post-btn" style="
-                        background-color: var(--primary-color);
-                        color: white;
-                        border: none;
-                        padding: 10px 20px;
-                        border-radius: 5px;
-                        margin-top: 20px;
-                        cursor: pointer;
-                        font-weight: 600;
-                        width: 100%;
-                    " disabled>Paylaş</button>
                 </div>
             </div>
         `;
@@ -1209,10 +1406,10 @@ class HomePage {
                 return;
             }
 
-            try {
-                sharePostBtn.disabled = true;
-                sharePostBtn.textContent = 'Paylaşılıyor...';
+            sharePostBtn.disabled = true;
+            sharePostBtn.textContent = 'Paylaşılıyor...';
 
+            try {
                 // PostService'i kullanarak gönderiyi yükle
                 await PostService.uploadPost(selectedImage, postCaption.value);
 
@@ -1230,6 +1427,165 @@ class HomePage {
                 sharePostBtn.textContent = 'Paylaş';
             }
         });
+    }
+
+    static async openSharePostModal(postId) {
+        try {
+            // Gönderiyi paylaşma modalını oluştur
+            const modalHTML = `
+                <div id="share-post-modal" class="modal">
+                    <div class="modal-content" style="max-width: 400px; padding: 20px;">
+                        <h3>Gönderiyi Paylaş</h3>
+                        <p style="margin: 15px 0;">Bu gönderiyi bir kullanıcıya mesaj olarak gönderin:</p>
+                        
+                        <input type="text" id="share-user-search" class="input" placeholder="Kullanıcı ara..." style="margin-bottom: 15px;">
+                        
+                        <div id="share-user-results" style="max-height: 250px; overflow-y: auto;">
+                            <!-- Kullanıcılar burada listelenecek -->
+                        </div>
+                        
+                        <div style="margin-top: 20px; display: flex; justify-content: flex-end;">
+                            <button id="close-share-modal" class="btn btn-light">İptal</button>
+                        </div>
+                    </div>
+                </div>
+            `;
+
+            document.body.insertAdjacentHTML('beforeend', modalHTML);
+
+            // Modal eventlerini ekle
+            const modal = document.getElementById('share-post-modal');
+            const closeBtn = document.getElementById('close-share-modal');
+            const searchInput = document.getElementById('share-user-search');
+            const resultsDiv = document.getElementById('share-user-results');
+
+            closeBtn.addEventListener('click', () => {
+                modal.remove();
+            });
+
+            // Kullanıcı arama fonksiyonu
+            const debounce = (func, delay) => {
+                let timeout;
+                return function () {
+                    const context = this;
+                    const args = arguments;
+                    clearTimeout(timeout);
+                    timeout = setTimeout(
+                        () => func.apply(context, args),
+                        delay
+                    );
+                };
+            };
+
+            const searchUsers = async (query) => {
+                if (!query || query.length < 2) {
+                    resultsDiv.innerHTML =
+                        '<p style="text-align: center; padding: 10px;">En az 2 karakter girin</p>';
+                    return;
+                }
+
+                resultsDiv.innerHTML =
+                    '<p style="text-align: center; padding: 10px;">Kullanıcılar aranıyor...</p>';
+
+                try {
+                    const { default: UserService } = await import(
+                        '../services/user-service.js'
+                    );
+                    const users = await UserService.searchUsers(query);
+
+                    if (!users || users.length === 0) {
+                        resultsDiv.innerHTML =
+                            '<p style="text-align: center; padding: 10px;">Kullanıcı bulunamadı</p>';
+                        return;
+                    }
+
+                    resultsDiv.innerHTML = users
+                        .map(
+                            (user) => `
+                        <div class="share-user-item" data-id="${
+                            user.uid
+                        }" data-username="${user.username}">
+                            <img src="${
+                                user.profileImage ||
+                                user.profilePicture ||
+                                'data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHZpZXdCb3g9IjAgMCAyMDAgMjAwIj48Y2lyY2xlIGN4PSIxMDAiIGN5PSIxMDAiIHI9IjEwMCIgZmlsbD0iI2U2ZTZlNiIvPjxjaXJjbGUgY3g9IjEwMCIgY3k9IjgwIiByPSI0MCIgZmlsbD0iI2IzYjNiMyIvPjxwYXRoIGQ9Ik0xNjAgMTgwYzAtMzMuMTM3LTI2Ljg2My02MC02MC02MHMtNjAgMjYuODYzLTYwIDYwaDEyMHoiIGZpbGw9IiNiM2IzYjMiLz48L3N2Zz4='
+                            }" 
+                                alt="${
+                                    user.username
+                                }" style="width: 40px; height: 40px; border-radius: 50%; margin-right: 10px;">
+                            <div>
+                                <div style="font-weight: bold;">${
+                                    user.username || 'Kullanıcı'
+                                }</div>
+                                <div style="font-size: 12px; color: #8e8e8e;">${
+                                    user.fullName || ''
+                                }</div>
+                            </div>
+                        </div>
+                    `
+                        )
+                        .join('');
+
+                    // Kullanıcı seçimi için event listener'lar ekle
+                    document
+                        .querySelectorAll('.share-user-item')
+                        .forEach((item) => {
+                            item.addEventListener('click', async () => {
+                                const userId = item.dataset.id;
+                                const username = item.dataset.username;
+
+                                try {
+                                    item.innerHTML =
+                                        '<div style="text-align: center; width: 100%;"><div class="spinner"></div>Paylaşılıyor...</div>';
+
+                                    const { default: ShareService } =
+                                        await import(
+                                            '../services/share-service.js'
+                                        );
+                                    await ShareService.sharePostAsMessage(
+                                        postId,
+                                        userId
+                                    );
+
+                                    // Modal'ı kapat ve başarı mesajı göster
+                                    modal.remove();
+                                    alert(
+                                        `Gönderi @${username} kullanıcısıyla başarıyla paylaşıldı.`
+                                    );
+                                } catch (error) {
+                                    console.error(
+                                        'Gönderi paylaşma hatası:',
+                                        error
+                                    );
+                                    alert(
+                                        `Gönderi paylaşılamadı: ${error.message}`
+                                    );
+                                }
+                            });
+                        });
+                } catch (error) {
+                    console.error('Kullanıcı arama hatası:', error);
+                    resultsDiv.innerHTML =
+                        '<p style="text-align: center; padding: 10px; color: red;">Arama sırasında bir hata oluştu</p>';
+                }
+            };
+
+            const debouncedSearch = debounce(searchUsers, 300);
+
+            searchInput.addEventListener('input', (e) => {
+                debouncedSearch(e.target.value);
+            });
+
+            // Modal dışına tıklandığında kapatma
+            modal.addEventListener('click', (e) => {
+                if (e.target === modal) {
+                    modal.remove();
+                }
+            });
+        } catch (error) {
+            console.error('Paylaşım modalı açılırken hata:', error);
+            alert('Gönderi paylaşım modalı açılamadı.');
+        }
     }
 
     static formatPostTime(timestamp) {
@@ -1511,6 +1867,31 @@ class HomePage {
         if (diffDays < 7) return `${diffDays} gün önce`;
 
         return date.toLocaleDateString();
+    }
+
+    static async checkUnreadMessages() {
+        try {
+            const { MessageService } = await import(
+                '../services/message-service.js'
+            );
+
+            const unreadCount = await MessageService.getUnreadMessagesCount();
+            const messagesBadge = document.getElementById('messages-badge');
+            if (messagesBadge) {
+                if (unreadCount > 0) {
+                    messagesBadge.textContent =
+                        unreadCount > 9 ? '9+' : unreadCount;
+                    messagesBadge.style.display = 'flex';
+                } else {
+                    messagesBadge.style.display = 'none';
+                }
+            }
+
+            // Her 1 dakikada bir kontrol et
+            setTimeout(() => this.checkUnreadMessages(), 60000);
+        } catch (error) {
+            console.error('Okunmamış mesaj kontrolü hatası:', error);
+        }
     }
 }
 

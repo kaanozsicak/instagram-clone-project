@@ -44,13 +44,16 @@ export class FollowService {
             if (isPrivate) {
                 console.log('Gizli hesap için takip isteği gönderiliyor');
 
-                // Takip isteği bildirimini oluştur
-                await NotificationService.sendFollowRequest(
-                    currentUser.uid,
-                    currentUser.displayName ||
-                        (await this.getCurrentUsername()),
-                    targetUser.uid
-                );
+                // Takip isteği bildirimini oluştur - sendFollowRequest yerine createNotification kullan
+                await NotificationService.createNotification({
+                    type: 'follow_request',
+                    status: 'pending',
+                    recipientId: targetUser.uid,
+                    senderUserId: currentUser.uid,
+                    senderUsername: await this.getCurrentUsername(),
+                    content: 'sizi takip etmek istiyor',
+                    createdAt: new Date(),
+                });
 
                 console.log(
                     'Takip isteği gönderildi, "pending" durumu döndürülüyor'
@@ -290,20 +293,107 @@ export class FollowService {
         }
     }
 
+    /**
+     * Kullanıcının takip ettiği kişilerin listesini getirir
+     * @param {string} userId - Kullanıcı ID'si
+     * @returns {Promise<Array>} - Takip edilen kullanıcı ID'leri
+     */
     static async getFollowing(userId) {
         try {
-            const followersRef = doc(firestore, 'followers', userId);
-            const followersDoc = await getDoc(followersRef);
-
+            const followersDoc = await getDoc(
+                doc(firestore, 'followers', userId)
+            );
             if (!followersDoc.exists()) {
                 return [];
             }
 
-            const data = followersDoc.data();
-            return Array.isArray(data.following) ? data.following : [];
+            return followersDoc.data().following || [];
         } catch (error) {
-            console.error('Takip edilenleri alma hatası:', error);
+            console.error('Takip edilenler listesi getirme hatası:', error);
             return [];
+        }
+    }
+
+    /**
+     * Kullanıcının takipçilerinin listesini getirir
+     * @param {string} userId - Kullanıcı ID'si
+     * @returns {Promise<Array>} - Takipçi kullanıcı ID'leri
+     */
+    static async getFollowers(userId) {
+        try {
+            const followersDoc = await getDoc(
+                doc(firestore, 'followers', userId)
+            );
+            if (!followersDoc.exists()) {
+                return [];
+            }
+
+            return followersDoc.data().followers || [];
+        } catch (error) {
+            console.error('Takipçiler listesi getirme hatası:', error);
+            return [];
+        }
+    }
+
+    /**
+     * Kullanıcının bekleyen takip isteklerini getirir
+     * @param {string} userId - Kullanıcı ID'si
+     * @returns {Promise<Array>} - Bekleyen takip istekleri ID'leri
+     */
+    static async getPendingFollowRequests(userId) {
+        try {
+            const followersDoc = await getDoc(
+                doc(firestore, 'followers', userId)
+            );
+            if (!followersDoc.exists()) {
+                return [];
+            }
+
+            return followersDoc.data().pendingRequests || [];
+        } catch (error) {
+            console.error('Bekleyen takip istekleri getirme hatası:', error);
+            return [];
+        }
+    }
+
+    /**
+     * İki kullanıcı arasındaki ilişkiyi kontrol eder
+     * @param {string} userId1 - Birinci kullanıcı ID'si
+     * @param {string} userId2 - İkinci kullanıcı ID'si
+     * @returns {Promise<Object>} - Takip ilişkisi durumu
+     */
+    static async getRelationship(userId1, userId2) {
+        try {
+            // Takip edip etmediğini kontrol et
+            const following = await this.getFollowing(userId1);
+            const isFollowing = following.includes(userId2);
+
+            // Takipçisi olup olmadığını kontrol et
+            const followers = await this.getFollowers(userId2);
+            const isFollower = followers.includes(userId1);
+
+            const relationship = {
+                isFollowing,
+                isFollower,
+            };
+
+            const pendingFollowRequests = await this.getPendingFollowRequests(
+                userId2
+            );
+            if (pendingFollowRequests.includes(userId1)) {
+                relationship.isPending = true;
+            } else {
+                relationship.isPending = false;
+            }
+
+            return relationship;
+        } catch (error) {
+            console.error('İlişki kontrolü hatası:', error);
+            return {
+                isFollowing: false,
+                isFollower: false,
+                isPending: false,
+            };
         }
     }
 }

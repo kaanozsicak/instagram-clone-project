@@ -11,6 +11,8 @@ class SignupPage {
         }
 
         appContainer.innerHTML = `
+            <link rel="stylesheet" href="/src/styles/ui-components.css">
+            
             <style>
                 :root {
                     --primary-color: #5563de;
@@ -202,81 +204,31 @@ class SignupPage {
                     }
                 }
             </style>
-            <div class="signup-container">
-                <div class="signup-card">
-                    <div class="app-logo">
-                        <h1>Photogram</h1>
-                    </div>
-                    <p class="app-tagline">Fotoğraf paylaşım dünyasına katılın</p>
+            
+            <div class="auth-container">
+                <div class="auth-form-container">
+                    <h2 class="auth-title">Photogram</h2>
+                    <p class="auth-subtitle">Hesap oluştur ve fotoğraf paylaş</p>
                     
-                    <form id="signup-form" class="signup-form">
-                        <div class="form-group">
-                            <label for="fullName">Ad Soyad</label>
-                            <input 
-                                type="text" 
-                                id="fullName"
-                                class="form-control" 
-                                placeholder="Adınız ve soyadınız" 
-                                required
-                            >
+                    <form id="signup-form">
+                        <div class="input-group">
+                            <input type="text" placeholder="E-posta" id="email" class="input">
                         </div>
-                        
-                        <div class="form-group">
-                            <label for="email">E-posta Adresi</label>
-                            <input 
-                                type="email" 
-                                id="email"
-                                class="form-control" 
-                                placeholder="E-posta adresinizi girin" 
-                                required
-                                autocomplete="username"
-                            >
+                        <div class="input-group">
+                            <input type="password" placeholder="Şifre" id="password" class="input">
                         </div>
-                        
-                        <div class="form-group">
-                            <label for="password">Şifre</label>
-                            <input 
-                                type="password" 
-                                id="password"
-                                class="form-control" 
-                                placeholder="Güçlü bir şifre oluşturun" 
-                                required
-                                autocomplete="new-password"
-                            >
+                        <div class="input-group">
+                            <input type="password" placeholder="Şifre (Tekrar)" id="password-confirm" class="input">
                         </div>
-                        
-                        <div class="form-group">
-                            <label for="confirmPassword">Şifre Tekrarı</label>
-                            <input 
-                                type="password" 
-                                id="confirmPassword"
-                                class="form-control" 
-                                placeholder="Şifrenizi tekrar girin" 
-                                required
-                                autocomplete="new-password"
-                            >
-                        </div>
-                        
-                        <button type="submit" class="submit-button">Kayıt Ol</button>
+                        <button type="submit" id="signup-button" class="btn btn-primary btn-block">Kayıt Ol</button>
                     </form>
                     
-                    <div class="divider">
-                        <span class="divider-text">veya</span>
-                    </div>
-                    
-                    <div class="social-login">
-                        <button class="social-button" title="Google ile kayıt ol">
-                            <svg class="social-icon" viewBox="0 0 24 24">
-                                <path fill="#EA4335" d="M12 5c1.617 0 3.101.554 4.274 1.479l3.171-3.172C17.455 1.523 14.887 0 12 0 7.392 0 3.397 2.6 1.386 6.386l3.662 2.849C6.188 6.642 8.874 5 12 5z"/>
-                                <path fill="#4285F4" d="M23.896 13.502c0-.868-.072-1.704-.215-2.502H12v4.731h6.735c-.287 1.554-1.172 2.882-2.496 3.766v3.134h4.043c2.365-2.175 3.718-5.383 3.718-9.129z"/>
-                                <path fill="#FBBC05" d="M5.047 14.537C4.822 13.737 4.698 12.892 4.698 12s.124-1.737.35-2.537L1.386 6.614C.502 8.259 0 10.066 0 12c0 1.934.502 3.741 1.386 5.386l3.661-2.849z"/>
-                                <path fill="#34A853" d="M12 24c3.691 0 6.797-1.212 9.058-3.284l-4.043-3.134c-1.112.749-2.545 1.197-4.039 1.197-3.126 0-5.812-1.642-6.952-4.242L1.386 17.386C3.397 21.399 7.392 24 12 24z"/>
-                            </svg>
+                    <div class="social-signup">
+                        <button id="google-signup" class="btn btn-outline social-btn">
+                            <i class="fab fa-google"></i> Google ile Kayıt
                         </button>
-                        <button class="social-button" title="Facebook ile kayıt ol">
-                            <svg class="social-icon" viewBox="0 0 24 24">
-                                <path fill="#1877F2" d="M24 12.073c0-6.627-5.373-12-12-12s-12 5.373-12 12c0 5.99 4.388 10.954 10.125 11.854v-8.385H7.078v-3.47h3.047V9.43c0-3.007 1.792-4.669 4.533-4.669 1.312 0 2.686.235 2.686.235v2.953H15.83c-1.491 0-1.956.925-1.956 1.874v2.25h3.328l-.532 3.47h-2.796v8.385C19.612 23.027 24 18.062 24 12.073z"/>
-                            </svg>
+                        <button id="facebook-signup" class="btn btn-outline social-btn">
+                            <i class="fab fa-facebook"></i> Facebook ile Kayıt
                         </button>
                     </div>
                     

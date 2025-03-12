@@ -1,286 +1,344 @@
 import { AuthService } from '../services/auth-service.js';
 
 class LoginPage {
-    static render() {
-        console.log('Login sayfası render ediliyor');
+    static async render() {
         const appContainer = document.getElementById('app');
-
-        if (!appContainer) {
-            console.error('App container bulunamadı');
-            return;
-        }
+        if (!appContainer) return;
 
         appContainer.innerHTML = `
-            <!-- Harici stil dosyası yerine inline stil kullanıyoruz -->
+            <link rel="stylesheet" href="./src/styles/ui-components.css">
+            
             <style>
-                :root {
-                    --primary-color: #5563de;
-                    --primary-light: #7b87e7;
-                    --primary-dark: #3a47c2;
-                    --secondary-color: #f27059;
-                    --bg-color: #f5f8fc;
-                    --card-color: #ffffff;
-                    --text-primary: #333333;
-                    --text-secondary: #666666;
-                    --border-color: #e1e4ea;
+                .auth-page {
+                    min-height: 100vh;
+                    display: flex;
+                    align-items: center;
+                    justify-content: center;
+                    background: linear-gradient(135deg, var(--primary-light) 0%, var(--primary-dark) 100%);
+                    padding: 20px;
+                    position: relative;
+                    overflow: hidden;
+                }
+                
+                .auth-page::before {
+                    content: "";
+                    position: absolute;
+                    top: -50%;
+                    right: -50%;
+                    width: 100%;
+                    height: 100%;
+                    background: radial-gradient(circle, rgba(255,255,255,0.2) 0%, rgba(255,255,255,0) 60%);
+                    transform: rotate(30deg);
+                }
+                
+                .auth-page::after {
+                    content: "";
+                    position: absolute;
+                    bottom: -50%;
+                    left: -50%;
+                    width: 100%;
+                    height: 100%;
+                    background: radial-gradient(circle, rgba(255,255,255,0.15) 0%, rgba(255,255,255,0) 60%);
+                    transform: rotate(-20deg);
                 }
                 
                 .login-container {
-                    display: flex;
-                    justify-content: center;
-                    align-items: center;
-                    min-height: 100vh;
-                    background-color: var(--bg-color);
-                    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
-                    padding: 20px;
-                }
-                
-                .login-card {
-                    background-color: var(--card-color);
-                    border-radius: 16px;
-                    box-shadow: 0 8px 24px rgba(0, 0, 0, 0.1);
                     width: 100%;
                     max-width: 420px;
+                    background-color: var(--card-color);
+                    border-radius: var(--border-radius-lg);
+                    box-shadow: var(--shadow-xl);
                     padding: 40px;
                     text-align: center;
-                    overflow: hidden;
                     position: relative;
+                    z-index: 10;
+                    animation: fadeInUp 0.6s ease-out;
+                    overflow: hidden;
                 }
                 
-                .login-card::before {
-                    content: '';
+                .login-container::before {
+                    content: "";
                     position: absolute;
                     top: 0;
                     left: 0;
-                    right: 0;
+                    width: 100%;
                     height: 6px;
-                    background: linear-gradient(to right, var(--primary-color), var(--secondary-color));
+                    background: linear-gradient(90deg, var(--primary-color), var(--secondary-color));
                 }
                 
-                .app-logo {
-                    margin-bottom: 24px;
-                }
-                
-                .app-logo h1 {
-                    font-size: 32px;
+                .form-title {
+                    font-size: 28px;
                     font-weight: 700;
+                    margin-bottom: 30px;
                     color: var(--primary-color);
-                    margin: 0;
-                }
-                
-                .app-tagline {
-                    color: var(--text-secondary);
-                    margin-bottom: 32px;
-                    font-size: 16px;
-                }
-                
-                .login-form {
-                    margin-bottom: 24px;
+                    text-shadow: 0px 1px 2px rgba(0, 0, 0, 0.1);
                 }
                 
                 .form-group {
-                    margin-bottom: 20px;
+                    margin-bottom: 24px;
+                    position: relative;
+                }
+                
+                .form-label {
+                    display: block;
+                    margin-bottom: 8px;
+                    font-weight: 600;
+                    color: var(--text-primary);
+                    text-align: left;
+                    font-size: 15px;
+                }
+                
+                .form-control {
+                    width: 100%;
+                    padding: 14px 16px;
+                    border: 1px solid var(--border-color);
+                    border-radius: var(--border-radius-md);
+                    font-size: 16px;
+                    transition: all 0.3s ease;
+                    background-color: var(--gray-50);
+                }
+                
+                .form-control:focus {
+                    border-color: var(--primary-color);
+                    box-shadow: 0 0 0 3px rgba(85, 99, 222, 0.15);
+                    background-color: white;
+                }
+                
+                .form-text {
+                    font-size: 13px;
+                    color: var(--text-secondary);
+                    margin-top: 6px;
                     text-align: left;
                 }
                 
-                .form-group label {
-                    display: block;
-                    margin-bottom: 8px;
-                    color: var(--text-primary);
-                    font-weight: 500;
-                    font-size: 14px;
-                }
-                
-                .form-group input {
+                .login-btn {
                     width: 100%;
-                    padding: 12px 16px;
-                    border: 1px solid var(--border-color);
-                    border-radius: 8px;
-                    font-size: 15px;
-                    transition: all 0.2s ease;
-                    background-color: #f9fafc;
-                    color: var(--text-primary);
-                }
-                
-                .form-group input:focus {
-                    outline: none;
-                    border-color: var(--primary-color);
-                    box-shadow: 0 0 0 3px rgba(85, 99, 222, 0.2);
-                }
-                
-                .submit-button {
-                    width: 100%;
-                    padding: 14px;
-                    background-color: var(--primary-color);
+                    padding: 15px;
+                    background: linear-gradient(90deg, var(--primary-color), var(--primary-dark));
                     color: white;
                     border: none;
-                    border-radius: 8px;
+                    border-radius: var(--border-radius-md);
                     font-size: 16px;
                     font-weight: 600;
                     cursor: pointer;
-                    transition: background-color 0.2s ease;
-                    margin-top: 8px;
+                    transition: all 0.3s ease;
+                    margin-bottom: 16px;
+                    box-shadow: 0 4px 8px rgba(46, 125, 50, 0.25);
                 }
                 
-                .submit-button:hover {
-                    background-color: var(--primary-dark);
-                }
-                
-                .submit-button:disabled {
-                    background-color: var(--primary-light);
-                    cursor: not-allowed;
-                    opacity: 0.7;
-                }
-                
-                .divider {
-                    display: flex;
-                    align-items: center;
-                    margin: 28px 0;
-                }
-                
-                .divider::before, .divider::after {
-                    content: '';
-                    flex: 1;
-                    border-top: 1px solid var(--border-color);
-                }
-                
-                .divider-text {
-                    padding: 0 16px;
-                    color: var(--text-secondary);
-                    font-size: 14px;
-                    text-transform: uppercase;
-                    font-weight: 500;
-                }
-                
-                .social-login {
-                    display: flex;
-                    justify-content: center;
-                    gap: 16px;
-                    margin-bottom: 28px;
-                }
-                
-                .social-button {
-                    display: flex;
-                    align-items: center;
-                    justify-content: center;
-                    width: 48px;
-                    height: 48px;
-                    border-radius: 50%;
-                    border: 1px solid var(--border-color);
-                    background-color: white;
-                    cursor: pointer;
-                    transition: all 0.2s ease;
-                }
-                
-                .social-button:hover {
-                    background-color: #f5f5f5;
+                .login-btn:hover {
+                    background: linear-gradient(90deg, var(--primary-dark), var(--primary-color));
                     transform: translateY(-2px);
+                    box-shadow: 0 6px 12px rgba(46, 125, 50, 0.3);
                 }
                 
-                .social-icon {
-                    width: 24px;
-                    height: 24px;
-                }
-                
-                .forgot-password {
-                    display: block;
-                    margin: 16px 0;
-                    color: var(--primary-color);
-                    font-size: 14px;
-                    text-decoration: none;
-                    font-weight: 500;
-                }
-                
-                .forgot-password:hover {
-                    text-decoration: underline;
-                }
-                
-                .signup-link {
+                .auth-footer {
                     margin-top: 32px;
                     color: var(--text-secondary);
-                    font-size: 15px;
                 }
                 
-                .signup-link a {
+                .auth-footer a {
                     color: var(--primary-color);
                     text-decoration: none;
                     font-weight: 600;
+                    transition: all 0.2s ease;
                 }
                 
-                .signup-link a:hover {
+                .auth-footer a:hover {
+                    color: var(--primary-dark);
                     text-decoration: underline;
                 }
                 
+                .alert {
+                    padding: 14px 16px;
+                    margin-bottom: 24px;
+                    border-radius: var(--border-radius-md);
+                    font-weight: 500;
+                    display: none;
+                    text-align: left;
+                }
+                
+                .alert-error {
+                    background-color: rgba(239, 68, 68, 0.1);
+                    color: var(--error-color);
+                    border-left: 3px solid var(--error-color);
+                }
+                
+                .brand-logo {
+                    font-size: 32px;
+                    font-weight: 800;
+                    margin-bottom: 30px;
+                    color: var(--primary-color);
+                    background: linear-gradient(45deg, var(--primary-color), var(--secondary-color));
+                    -webkit-background-clip: text;
+                    -webkit-text-fill-color: transparent;
+                    letter-spacing: 1px;
+                }
+                
+                .login-banner {
+                    background: linear-gradient(45deg, var(--primary-light), var(--secondary-light));
+                    color: white;
+                    padding: 15px;
+                    border-radius: var(--border-radius-md);
+                    margin-bottom: 30px;
+                    box-shadow: 0 3px 6px rgba(0,0,0,0.1);
+                }
+                
+                @keyframes fadeInUp {
+                    from {
+                        opacity: 0;
+                        transform: translateY(20px);
+                    }
+                    to {
+                        opacity: 1;
+                        transform: translateY(0);
+                    }
+                }
+                
+                .form-icon {
+                    position: absolute;
+                    top: 50%;
+                    right: 12px;
+                    transform: translateY(-50%);
+                    color: var(--text-secondary);
+                }
+                
+                .password-group {
+                    position: relative;
+                }
+                
+                .toggle-password {
+                    position: absolute;
+                    top: 50%;
+                    right: 12px;
+                    transform: translateY(-50%);
+                    background: none;
+                    border: none;
+                    color: var(--text-secondary);
+                    cursor: pointer;
+                    padding: 5px;
+                }
+                
+                .toggle-password:hover {
+                    color: var(--primary-color);
+                }
+                
                 @media (max-width: 480px) {
-                    .login-card {
+                    .login-container {
                         padding: 30px 20px;
-                        border-radius: 12px;
+                        max-width: 100%;
+                    }
+                }
+                
+                .floating-shapes div {
+                    position: absolute;
+                    background: rgba(255, 255, 255, 0.1);
+                    border-radius: 50%;
+                    z-index: 1;
+                }
+                
+                .shape1 {
+                    width: 200px;
+                    height: 200px;
+                    top: -100px;
+                    left: -100px;
+                    animation: float 8s infinite ease-in-out;
+                }
+                
+                .shape2 {
+                    width: 150px;
+                    height: 150px;
+                    bottom: 50px;
+                    right: -50px;
+                    animation: float 10s infinite ease-in-out reverse;
+                }
+                
+                .shape3 {
+                    width: 80px;
+                    height: 80px;
+                    bottom: -30px;
+                    left: 10%;
+                    animation: float 7s infinite ease-in-out;
+                }
+                
+                .shape4 {
+                    width: 50px;
+                    height: 50px;
+                    top: 30%;
+                    right: 10%;
+                    animation: float 9s infinite ease-in-out reverse;
+                }
+                
+                @keyframes float {
+                    0%, 100% {
+                        transform: translateY(0);
+                    }
+                    50% {
+                        transform: translateY(-20px);
                     }
                 }
             </style>
             
-            <div class="login-container">
-                <div class="login-card">
-                    <div class="app-logo">
-                        <h1>Photogram</h1>
-                    </div>
-                    <p class="app-tagline">Fotoğraflarınızı paylaşın ve keşfedin</p>
+            <div class="auth-page">
+                <div class="floating-shapes">
+                    <div class="shape1"></div>
+                    <div class="shape2"></div>
+                    <div class="shape3"></div>
+                    <div class="shape4"></div>
+                </div>
+                
+                <div class="login-container">
+                    <div class="brand-logo">Photogram</div>
                     
-                    <form id="login-form" class="login-form">
+                    <div class="login-banner">
+                        <p>👋 Sosyal deneyimine hoş geldin!</p>
+                    </div>
+                    
+                    <div class="alert alert-error" id="error-message"></div>
+                    
+                    <form id="login-form">
                         <div class="form-group">
-                            <label for="email">E-posta Adresi</label>
+                            <label class="form-label" for="email">E-posta</label>
                             <input 
                                 type="email" 
+                                class="form-control" 
                                 id="email" 
-                                placeholder="E-posta adresinizi girin" 
+                                placeholder="E-posta adresiniz" 
                                 required
-                                autocomplete="username"
+                                autocomplete="email"
                             >
                         </div>
                         
                         <div class="form-group">
-                            <label for="password">Şifre</label>
-                            <input 
-                                type="password" 
-                                id="password" 
-                                placeholder="Şifrenizi girin" 
-                                required
-                                autocomplete="current-password"
-                            >
+                            <label class="form-label" for="password">Şifre</label>
+                            <div class="password-group">
+                                <input 
+                                    type="password" 
+                                    class="form-control" 
+                                    id="password" 
+                                    placeholder="Şifreniz" 
+                                    required
+                                    autocomplete="current-password"
+                                >
+                                <button 
+                                    type="button" 
+                                    class="toggle-password" 
+                                    id="toggle-password"
+                                >
+                                    <i class="far fa-eye"></i>
+                                </button>
+                            </div>
+                            <div class="form-text">En az 6 karakter olmalıdır</div>
                         </div>
                         
-                        <button type="submit" class="submit-button">Giriş Yap</button>
+                        <button type="submit" class="login-btn" id="login-button">
+                            <i class="fas fa-sign-in-alt" style="margin-right: 8px;"></i>Giriş Yap
+                        </button>
                     </form>
                     
-                    <a href="#" class="forgot-password">Şifremi unuttum</a>
-                    
-                    <div class="divider">
-                        <span class="divider-text">veya</span>
-                    </div>
-                    
-                    <div class="social-login">
-                        <button class="social-button" title="Google ile giriş yap">
-                            <svg class="social-icon" viewBox="0 0 24 24">
-                                <path fill="#EA4335" d="M12 5c1.617 0 3.101.554 4.274 1.479l3.171-3.172C17.455 1.523 14.887 0 12 0 7.392 0 3.397 2.6 1.386 6.386l3.662 2.849C6.188 6.642 8.874 5 12 5z"/>
-                                <path fill="#4285F4" d="M23.896 13.502c0-.868-.072-1.704-.215-2.502H12v4.731h6.735c-.287 1.554-1.172 2.882-2.496 3.766v3.134h4.043c2.365-2.175 3.718-5.383 3.718-9.129z"/>
-                                <path fill="#FBBC05" d="M5.047 14.537C4.822 13.737 4.698 12.892 4.698 12s.124-1.737.35-2.537L1.386 6.614C.502 8.259 0 10.066 0 12c0 1.934.502 3.741 1.386 5.386l3.661-2.849z"/>
-                                <path fill="#34A853" d="M12 24c3.691 0 6.797-1.212 9.058-3.284l-4.043-3.134c-1.112.749-2.545 1.197-4.039 1.197-3.126 0-5.812-1.642-6.952-4.242L1.386 17.386C3.397 21.399 7.392 24 12 24z"/>
-                            </svg>
-                        </button>
-                        <button class="social-button" title="Facebook ile giriş yap">
-                            <svg class="social-icon" viewBox="0 0 24 24">
-                                <path fill="#1877F2" d="M24 12.073c0-6.627-5.373-12-12-12s-12 5.373-12 12c0 5.99 4.388 10.954 10.125 11.854v-8.385H7.078v-3.47h3.047V9.43c0-3.007 1.792-4.669 4.533-4.669 1.312 0 2.686.235 2.686.235v2.953H15.83c-1.491 0-1.956.925-1.956 1.874v2.25h3.328l-.532 3.47h-2.796v8.385C19.612 23.027 24 18.062 24 12.073z"/>
-                            </svg>
-                        </button>
-                        <button class="social-button" title="Apple ile giriş yap">
-                            <svg class="social-icon" viewBox="0 0 24 24">
-                                <path fill="#000000" d="M17.05 20.28c-.98.95-2.05.8-3.08.4-1.09-.41-2.09-.42-3.19 0-1.38.56-2.11.35-3-.49C3.09 15.46 3.72 7.75 9.21 7.4c1.38.06 2.32.75 3.11.76 1.11-.1 2.17-.71 3.44-.6 1.41.12 2.62.8 3.32 1.82-2.74 1.87-2.29 5.99.48 7.4-.61 1.24-1.39 2.5-2.51 3.5zM12.03 7c-.13-2.76 2.16-5.13 4.91-5 .27 2.94-2.63 5.3-4.91 5z"/>
-                            </svg>
-                        </button>
-                    </div>
-                    
-                    <div class="signup-link">
-                        Hesabınız yok mu? <a href="/signup">Kayıt olun</a>
+                    <div class="auth-footer">
+                        <p>Henüz bir hesabınız yok mu? <a href="/signup" id="signup-link">Kaydol</a></p>
+                        <p style="margin-top: 10px; font-size: 13px;">Giriş yaparak, <a href="#">Kullanım Şartları</a> ve <a href="#">Gizlilik Politikası</a>'nı kabul etmiş olursunuz.</p>
                     </div>
                 </div>
             </div>
@@ -291,50 +349,57 @@ class LoginPage {
 
     static setupEventListeners() {
         const loginForm = document.getElementById('login-form');
-        loginForm.addEventListener('submit', this.handleLogin);
-    }
-
-    static async handleLogin(e) {
-        e.preventDefault();
-        console.log('Giriş işlemi başlatılıyor');
-
-        const emailInput = document.getElementById('email');
+        const signupLink = document.getElementById('signup-link');
+        const errorMessage = document.getElementById('error-message');
+        const togglePassword = document.getElementById('toggle-password');
         const passwordInput = document.getElementById('password');
 
-        const email = emailInput.value.trim();
-        const password = passwordInput.value;
+        // Şifre göster/gizle butonu
+        togglePassword.addEventListener('click', () => {
+            const type =
+                passwordInput.getAttribute('type') === 'password'
+                    ? 'text'
+                    : 'password';
+            passwordInput.setAttribute('type', type);
 
-        try {
-            // Önce login butonunu devre dışı bırak
-            const submitButton = document.querySelector(
-                '#login-form button[type="submit"]'
-            );
-            if (submitButton) {
-                submitButton.disabled = true;
-                submitButton.textContent = 'Giriş yapılıyor...';
+            // Göz ikonunu değiştir
+            togglePassword.innerHTML =
+                type === 'password'
+                    ? '<i class="far fa-eye"></i>'
+                    : '<i class="far fa-eye-slash"></i>';
+        });
+
+        loginForm.addEventListener('submit', async (e) => {
+            e.preventDefault();
+
+            const email = document.getElementById('email').value;
+            const password = document.getElementById('password').value;
+            const loginButton = document.getElementById('login-button');
+
+            try {
+                errorMessage.style.display = 'none';
+                loginButton.disabled = true;
+                loginButton.innerHTML =
+                    '<span class="spinner spinner-sm"></span> Giriş Yapılıyor...';
+
+                await AuthService.login(email, password);
+                window.location.href = '/home';
+            } catch (error) {
+                console.error('Login error:', error);
+                errorMessage.textContent =
+                    error.message ||
+                    'Giriş yapılamadı. Lütfen bilgilerinizi kontrol edin.';
+                errorMessage.style.display = 'block';
+                loginButton.disabled = false;
+                loginButton.innerHTML =
+                    '<i class="fas fa-sign-in-alt" style="margin-right: 8px;"></i>Giriş Yap';
             }
+        });
 
-            // Login işlemini gerçekleştir
-            const userCredential = await AuthService.login(email, password);
-            console.log('Giriş başarılı:', userCredential);
-
-            // Home sayfasına yönlendir
-            setTimeout(() => {
-                window.location.replace('/home');
-            }, 500);
-        } catch (error) {
-            console.error('Giriş hatası:', error);
-            alert(error.message || 'Giriş yapılırken bir hata oluştu');
-
-            // Butonu tekrar aktif et
-            const submitButton = document.querySelector(
-                '#login-form button[type="submit"]'
-            );
-            if (submitButton) {
-                submitButton.disabled = false;
-                submitButton.textContent = 'Giriş Yap';
-            }
-        }
+        signupLink.addEventListener('click', (e) => {
+            e.preventDefault();
+            window.location.href = '/signup';
+        });
     }
 }
 
